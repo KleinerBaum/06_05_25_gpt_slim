@@ -1,3 +1,5 @@
+import streamlit as st
+
 # Alle Keys nach Wizard‑Schritt
 KEYS = {
     "step1": [
