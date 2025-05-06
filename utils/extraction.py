@@ -72,8 +72,7 @@ def match_and_store_keys(text: str, session_state):
     """
     for label, key in LABELS.items():
         if label in text and session_state.get(key) in (None, ""):
-            value = text.split(label, 1)[1].split("
-", 1)[0].strip()
+            value = text.split(label, 1)[1].split("\\n", 1)[0].strip()
             session_state[key] = value
     session_state["parsed_data_raw"] = text
     return ""
