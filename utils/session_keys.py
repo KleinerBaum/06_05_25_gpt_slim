@@ -48,9 +48,11 @@ KEYS = {
 ALL_KEYS = [k for group in KEYS.values() for k in group]
 
 
+# utils/session_keys.py
 def init_session_state():
-    """Erzeugt alle benötigten Keys als None, falls nicht vorhanden."""
+    if st.session_state.get("_session_keys_initialized_"):
+        return
     for key in ALL_KEYS:
-        if key not in st.session_state:
-            st.session_state[key] = None
-    return True
+        st.session_state.setdefault(key, None)
+    st.session_state["_session_keys_initialized_"] = True
+
