@@ -1,207 +1,335 @@
 import streamlit as st
-from services.openai_functions import generate_tasks, generate_skills, generate_benefits
-from utils import session_keys
+from utils.session_keys import KEYS, ALL_KEYS, init_session_state
+from utils.extraction import extract_text_from_file, match_and_store_keys
+# Optional: Import fetch_url_text if available; otherwise define a fallback
+try:
+    from utils.extraction import fetch_url_text
+except ImportError:
+    import requests
+    from bs4 import BeautifulSoup
+    def fetch_url_text(url: str) -> str:
+        """Lädt den Inhalt der URL und gibt den extrahierten Text zurück."""
+        try:
+            res = requests.get(url, timeout=10)
+            if res.status_code != 200:
+                st.error("Fehler beim Laden der URL. Status-Code: {}".format(res.status_code))
+                return ""
+        except Exception as e:
+            st.error("Fehler beim Laden der URL: {}".format(e))
+            return ""
+        # HTML zu Text konvertieren
+        soup = BeautifulSoup(res.text, "html.parser")
+        # Gesamten sichtbaren Text extrahieren
+        text = soup.get_text(separator="\n")
+        # Optional: Sehr langen Text abschneiden
+        MAX_CHARS = 15000
+        if len(text) > MAX_CHARS:
+            st.warning("Text länger als {} Zeichen – wurde gekürzt.".format(MAX_CHARS))
+            text = text[:MAX_CHARS]
+        return text
 
-"""
-Dieses Modul kombiniert den Discovery-Schritt (Dateiupload, URL, Texteingabe) 
-mit einem mehrstufigen Wizard. Jeder Schritt des Wizards wird über den Session-State gesteuert.
-"""
+# Initialisiere Session-State (alle benötigten Keys)
+init_session_state()
+# Stelle sicher, dass der Wizard-Step initialisiert ist
+if "wizard_step" not in st.session_state:
+    st.session_state["wizard_step"] = 1
 
-# Definiere die Schritte des Wizards mit Titeln und Beschreibungen (für Nutzerführung)
-WIZARD_STEPS = [
-    {"title": "Angaben", "description": "Wählen Sie eine Methode, um die Ausgangsinformationen bereitzustellen. Laden Sie ein Dokument hoch, geben Sie eine URL ein oder fügen Sie Text manuell ein."},
-    {"title": "Aufgaben", "description": "Basierend auf Ihren Eingaben werden im Folgenden die Aufgaben vorgeschlagen."},
-    {"title": "Anforderungen & Fähigkeiten", "description": "Basierend auf den Aufgaben werden nun die erforderlichen Anforderungen und Fähigkeiten generiert."},
-    {"title": "Benefits", "description": "Abschließend werden noch passende Benefits für diese Position vorgeschlagen."},
-    {"title": "Zusammenfassung", "description": "Überblick über alle generierten Inhalte der Stellenausschreibung."}
-]
+step = st.session_state["wizard_step"]
 
-# Überprüfe und initialisiere die erforderlichen Session-State Keys 
-session_keys.ensure_session_state()  # stellt sicher, dass 'content', 'tasks', 'skills', 'benefits', 'current_step' existieren
+# Hilfs-Dictionary: Zuordnung von Schlüssel zu Feldbeschriftung (Deutsch)
+KEY_LABELS = {
+    # Step1
+    "job_title": "Jobtitel",
+    "input_url": "Stellenanzeige-URL",
+    "uploaded_text": "Geladener Anzeigentext",
+    "parsed_data_raw": "Analyse-Rohdaten",
+    "source_language": "Sprache",
+    # Step2
+    "company_name": "Unternehmensname",
+    "brand_name": "Markenname",
+    "headquarters_location": "Hauptsitz (Ort)",
+    "city": "Stadt (Standort)",
+    "company_website": "Unternehmens-Website",
+    "company_size": "Unternehmensgröße",
+    "industry_sector": "Branche",
+    "job_type": "Beschäftigungsart",
+    "contract_type": "Vertragsart",
+    "job_level": "Karrierestufe",
+    "team_structure": "Teamstruktur",
+    "date_of_employment_start": "Startdatum",
+    # Step3
+    "role_description": "Rollenbeschreibung",
+    "reports_to": "Berichtet an",
+    "supervises": "Leitet / Beaufsichtigt",
+    "role_type": "Rollenart",
+    "role_performance_metrics": "Leistungskennzahlen",
+    "role_priority_projects": "Prioritäre Projekte",
+    "travel_requirements": "Reisebereitschaft",
+    "work_schedule": "Arbeitszeitmodell",
+    "decision_making_authority": "Entscheidungsbefugnis",
+    "role_keywords": "Schlüsselwörter (Rolle)",
+    # Step4
+    "task_list": "Aufgabenliste",
+    "key_responsibilities": "Hauptverantwortlichkeiten",
+    "technical_tasks": "Technische Aufgaben",
+    "managerial_tasks": "Führungsaufgaben",
+    "administrative_tasks": "Administrative Aufgaben",
+    "customer_facing_tasks": "Kundenkontakt-Aufgaben",
+    "internal_reporting_tasks": "Interne Reporting-Aufgaben",
+    "performance_tasks": "Leistungsbezogene Aufgaben",
+    "innovation_tasks": "Innovationsaufgaben",
+    "task_prioritization": "Aufgabenpriorisierung",
+    # Step5
+    "must_have_skills": "Must-have-Fähigkeiten",
+    "hard_skills": "Hard Skills",
+    "nice_to_have_skills": "Nice-to-have-Fähigkeiten",
+    "soft_skills": "Soft Skills",
+    "language_requirements": "Sprachanforderungen",
+    "tool_proficiency": "Tool-Kenntnisse",
+    "technical_stack": "Technologie-Stack",
+    "domain_expertise": "Domain-Expertise",
+    "leadership_competencies": "Führungskompetenzen",
+    "certifications_required": "Erforderliche Zertifizierungen",
+    "industry_experience": "Branchenerfahrung",
+    "analytical_skills": "Analytische Fähigkeiten",
+    "communication_skills": "Kommunikationsfähigkeiten",
+    "project_management_skills": "Projektmanagement-Fähigkeiten",
+    "soft_requirement_details": "Weitere Anforderungsdetails",
+    "visa_sponsorship": "Visa-Unterstützung",
+    # Step6
+    "salary_range": "Gehaltsspanne",
+    "currency": "Währung",
+    "pay_frequency": "Zahlungsfrequenz",
+    "bonus_scheme": "Bonusregelung",
+    "commission_structure": "Provisionsmodell",
+    "vacation_days": "Urlaubstage",
+    "remote_work_policy": "Remote-Work-Regelung",
+    "flexible_hours": "Flexible Arbeitszeiten",
+    "relocation_assistance": "Umzugsunterstützung",
+    "childcare_support": "Kinderbetreuung",
+    "travel_requirements_link": "Reiseanforderungen (Link)",
+    # Step7
+    "recruitment_steps": "Bewerbungsphasen",
+    "number_of_interviews": "Anzahl der Interviews",
+    "assessment_tests": "Assessment-Tests",
+    "interview_format": "Interview-Format",
+    "recruitment_timeline": "Rekrutierungszeitplan",
+    "onboarding_process_overview": "Onboarding-Prozess (Übersicht)",
+    "recruitment_contact_email": "Kontakt E-Mail",
+    "recruitment_contact_phone": "Kontakt Telefon",
+    "application_instructions": "Bewerbungsanweisungen",
+    # Step8 (falls benötigt, meistens intern)
+    "ad_seniority_tone": "Ton bzgl. Seniorität",
+    "ad_length_preference": "Präferenz Anzeigenlänge",
+    "language_of_ad": "Sprache der Anzeige",
+    "translation_required": "Übersetzung benötigt",
+    "desired_publication_channels": "Gewünschte Veröffentlichungskanäle",
+    "employer_branding_elements": "Employer-Branding-Elemente",
+    "diversity_inclusion_statement": "Diversity & Inclusion Statement",
+    "legal_disclaimers": "Rechtliche Hinweise",
+    "company_awards": "Auszeichnungen des Unternehmens",
+    "social_media_links": "Social-Media-Links",
+    "video_introduction_option": "Option Video-Einführung",
+    "internal_job_id": "Interne Job-ID",
+    "deadline_urgency": "Dringlichkeit/Frist",
+    "comments_internal": "Interne Kommentare"
+}
 
-# Titel und Fortschrittsanzeige
-current_step = st.session_state.get('current_step', 0)
-total_steps = len(WIZARD_STEPS)
-st.title('🧩 KI-Assistent für Stellenausschreibungen')
-st.markdown(f"**Schritt {current_step+1} von {total_steps}: {WIZARD_STEPS[current_step]['title']}**")
-st.write(WIZARD_STEPS[current_step]['description'])
-st.progress(current_step / (total_steps - 1))
+# Schrittabhängige Darstellung
+if step == 1:
+    st.title("Schritt 1 – Discovery")
+    st.markdown("Bitte wählen Sie eine Methode zur Dateneingabe für die Stellenausschreibung:")
+    # Eingabe: Jobtitel immer abfragen
+    st.text_input("Jobtitel", key="job_title")
+    # Auswahl der Datenquelle
+    method = st.radio("Datenquelle", ("URL eingeben", "PDF/TXT hochladen", "Text manuell eingeben"), index=0)
+    url_input = None
+    uploaded_file = None
+    manual_text = None
+    if method == "URL eingeben":
+        url_input = st.text_input("Stellenanzeige-URL", key="input_url")
+    elif method == "PDF/TXT hochladen":
+        uploaded_file = st.file_uploader("Stellenanzeige als PDF oder Textdatei hochladen", type=["pdf", "txt"], key="uploaded_file")
+    else:
+        manual_text = st.text_area("Stellentext manuell eingeben", key="manual_text")
+    if st.button("Analyse starten"):
+        raw_text = ""
+        # Wähle Quelle basierend auf der Auswahl und Eingaben
+        if method == "PDF/TXT hochladen" and uploaded_file is not None:
+            raw_text = extract_text_from_file(uploaded_file.read(), uploaded_file.name)
+        elif method == "URL eingeben" and url_input:
+            raw_text = fetch_url_text(url_input)
+        elif method == "Text manuell eingeben" and manual_text:
+            raw_text = manual_text
+        # Falls keine Quelldaten angegeben wurden
+        if raw_text == "":
+            st.info("Kein Beschreibungstext angegeben – die Analyse basiert nur auf dem Jobtitel.")
+        # Wenn überhaupt keine Informationen vorhanden, Abbruch
+        if raw_text == "" and not st.session_state["job_title"]:
+            st.error("Bitte geben Sie mindestens einen Jobtitel oder eine Stellenbeschreibung ein.")
+        else:
+            # Texte analysieren und relevante Felder füllen
+            match_and_store_keys(raw_text, st.session_state)
+            # (Optionales Event-Logging kann hier eingefügt werden)
+            # Zum nächsten Schritt wechseln
+            st.session_state["wizard_step"] = 2
+            st.rerun()
 
-# Schritt 1: Angaben (Discovery-Schritt)
-if st.session_state['current_step'] == 0:
-    # Auswahl der Eingabemethode
-    input_method = st.radio("Eingabemethode auswählen:", ("Datei hochladen", "URL eingeben", "Text eingeben"))
-    if input_method == "Datei hochladen":
-        uploaded_file = st.file_uploader("Bitte wählen Sie eine Datei aus:", type=["txt", "pdf", "docx"])
-        if uploaded_file is not None:
-            file_name = uploaded_file.name.lower()
-            if file_name.endswith('.txt'):
-                # Textdatei direkt einlesen
-                st.session_state['content'] = str(uploaded_file.read(), 'utf-8')
-            elif file_name.endswith('.pdf'):
-                try:
-                    import PyPDF2
-                    reader = PyPDF2.PdfReader(uploaded_file)
-                    text = ""
-                    for page in reader.pages:
-                        text += page.extract_text() + "\n"
-                    st.session_state['content'] = text
-                except Exception as e:
-                    st.error("Fehler beim Lesen der PDF-Datei.")
-                    st.session_state['content'] = ""
-            elif file_name.endswith('.docx'):
-                try:
-                    import docx
-                    doc = docx.Document(uploaded_file)
-                    text = "\n".join([para.text for para in doc.paragraphs])
-                    st.session_state['content'] = text
-                except Exception as e:
-                    st.error("Fehler beim Lesen der DOCX-Datei.")
-                    st.session_state['content'] = ""
+elif step == 2:
+    st.title("Schritt 2 – Basisinformationen")
+    # Felder Schritt 2 anzeigen
+    for key in KEYS["step2"]:
+        label = KEY_LABELS.get(key, key)
+        st.text_input(label, key=key)
+    # Navigations-Buttons
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("◀️ Zurück"):
+            st.session_state["wizard_step"] = 1
+            st.rerun()
+    with col2:
+        if st.button("Weiter ▶️"):
+            st.session_state["wizard_step"] = 3
+            st.rerun()
+
+elif step == 3:
+    st.title("Schritt 3 – Rollenbeschreibung")
+    for key in KEYS["step3"]:
+        label = KEY_LABELS.get(key, key)
+        # Längere Texte in Textarea, ansonsten Textinput
+        if key in ["role_description", "role_performance_metrics", "role_priority_projects", "work_schedule", "decision_making_authority", "role_keywords"]:
+            st.text_area(label, key=key)
+        else:
+            st.text_input(label, key=key)
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("◀️ Zurück"):
+            st.session_state["wizard_step"] = 2
+            st.rerun()
+    with col2:
+        if st.button("Weiter ▶️"):
+            st.session_state["wizard_step"] = 4
+            st.rerun()
+
+elif step == 4:
+    st.title("Schritt 4 – Aufgaben")
+    for key in KEYS["step4"]:
+        label = KEY_LABELS.get(key, key)
+        # Aufgabenfelder als mehrzeiliger Text
+        st.text_area(label, key=key)
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("◀️ Zurück"):
+            st.session_state["wizard_step"] = 3
+            st.rerun()
+    with col2:
+        if st.button("Weiter ▶️"):
+            st.session_state["wizard_step"] = 5
+            st.rerun()
+
+elif step == 5:
+    st.title("Schritt 5 – Anforderungen")
+    for key in KEYS["step5"]:
+        label = KEY_LABELS.get(key, key)
+        if key in ["must_have_skills", "hard_skills", "nice_to_have_skills", "soft_skills",
+                   "language_requirements", "tool_proficiency", "technical_stack", "domain_expertise",
+                   "leadership_competencies", "certifications_required", "industry_experience",
+                   "soft_requirement_details", "visa_sponsorship"]:
+            # Visa-Sponsoring und Soft-Requirement-Details evtl. kurze Texte, trotzdem Textinput lassen?
+            if key in ["visa_sponsorship"]:
+                st.text_input(label, key=key)
             else:
-                st.warning("Dateiformat nicht unterstützt. Bitte eine .txt, .pdf oder .docx Datei hochladen.")
-                st.session_state['content'] = ""
-    elif input_method == "URL eingeben":
-        url = st.text_input("Bitte geben Sie die URL ein:")
-        if url:
-            import requests
-            try:
-                res = requests.get(url, timeout=10)
-                if res.status_code == 200:
-                    # Text aus HTML extrahieren
-                    from bs4 import BeautifulSoup
-                    soup = BeautifulSoup(res.text, "html.parser")
-                    text = soup.get_text(separator="\n")
-                    st.session_state['content'] = text
-                else:
-                    st.error(f"Die URL konnte nicht abgerufen werden (Status {res.status_code}).")
-                    st.session_state['content'] = ""
-            except Exception as e:
-                st.error("Fehler beim Abrufen der URL.")
-                st.session_state['content'] = ""
-    else:  # "Text eingeben"
-        manual_text = st.text_area("Bitte geben Sie den Text ein:")
-        if manual_text:
-            st.session_state['content'] = manual_text
+                st.text_area(label, key=key)
+        elif key in ["analytical_skills", "communication_skills", "project_management_skills"]:
+            st.text_input(label, key=key)
+        else:
+            st.text_input(label, key=key)
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("◀️ Zurück"):
+            st.session_state["wizard_step"] = 4
+            st.rerun()
+    with col2:
+        if st.button("Weiter ▶️"):
+            st.session_state["wizard_step"] = 6
+            st.rerun()
 
-    # Weiter-Button (aktiviert, wenn Inhalt vorhanden ist)
-    if st.session_state['content'] and st.button("Weiter zu Aufgaben →"):
-        # Vor dem Schrittwechsel bisherige KI-Ergebnisse zurücksetzen
-        st.session_state['tasks'] = None
-        st.session_state['skills'] = None
-        st.session_state['benefits'] = None
-        st.session_state['current_step'] = 1
+elif step == 6:
+    st.title("Schritt 6 – Rahmenbedingungen")
+    for key in KEYS["step6"]:
+        label = KEY_LABELS.get(key, key)
+        st.text_input(label, key=key)
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("◀️ Zurück"):
+            st.session_state["wizard_step"] = 5
+            st.rerun()
+    with col2:
+        if st.button("Weiter ▶️"):
+            st.session_state["wizard_step"] = 7
+            st.rerun()
 
-# Schritt 2: Aufgaben (KI-generierte Aufgaben anzeigen)
-elif st.session_state['current_step'] == 1:
-    # Aufgaben generieren (falls noch nicht erfolgt)
-    if st.session_state['tasks'] is None:
-        with st.spinner("KI generiert Aufgaben..."):
-            st.session_state['tasks'] = generate_tasks(st.session_state['content'])
-    # Ergebnisse anzeigen
-    tasks_result = st.session_state['tasks']
-    st.subheader("Vorgeschlagene Aufgaben")
-    if isinstance(tasks_result, list):
-        for task in tasks_result:
-            st.markdown(f"- {task}")
-    elif tasks_result:
-        st.markdown(tasks_result)
-    else:
-        st.info("Keine Aufgaben gefunden.")
+elif step == 7:
+    st.title("Schritt 7 – Bewerbungsprozess")
+    for key in KEYS["step7"]:
+        label = KEY_LABELS.get(key, key)
+        if key in ["recruitment_steps", "assessment_tests", "onboarding_process_overview", "application_instructions"]:
+            st.text_area(label, key=key)
+        else:
+            st.text_input(label, key=key)
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("◀️ Zurück"):
+            st.session_state["wizard_step"] = 6
+            st.rerun()
+    with col2:
+        if st.button("Weiter ▶️"):
+            st.session_state["wizard_step"] = 8
+            st.rerun()
 
-    # Navigation: Zurück / Weiter
-    col1, col2 = st.columns([1, 1])
-    if col1.button("← Zurück zu Angaben"):
-        st.session_state['current_step'] = 0
-    if col2.button("Weiter zu Anforderungen →"):
-        # Nachfolgende Ergebnisse zurücksetzen, falls neu generiert werden soll
-        st.session_state['skills'] = None
-        st.session_state['benefits'] = None
-        st.session_state['current_step'] = 2
-
-# Schritt 3: Anforderungen & Fähigkeiten 
-elif st.session_state['current_step'] == 2:
-    if st.session_state['skills'] is None:
-        with st.spinner("KI generiert Anforderungen und Fähigkeiten..."):
-            # Optional könnten hier die tasks als Kontext übergeben werden
-            st.session_state['skills'] = generate_skills(st.session_state['content'])
-    skills_result = st.session_state['skills']
-    st.subheader("Vorgeschlagene Anforderungen & Fähigkeiten")
-    if isinstance(skills_result, list):
-        for skill in skills_result:
-            st.markdown(f"- {skill}")
-    elif skills_result:
-        st.markdown(skills_result)
-    else:
-        st.info("Keine Anforderungen gefunden.")
-
-    col1, col2 = st.columns([1, 1])
-    if col1.button("← Zurück zu Aufgaben"):
-        st.session_state['current_step'] = 1
-    if col2.button("Weiter zu Benefits →"):
-        st.session_state['benefits'] = None
-        st.session_state['current_step'] = 3
-
-# Schritt 4: Benefits 
-elif st.session_state['current_step'] == 3:
-    if st.session_state['benefits'] is None:
-        with st.spinner("KI generiert Benefits..."):
-            st.session_state['benefits'] = generate_benefits(st.session_state['content'])
-    benefits_result = st.session_state['benefits']
-    st.subheader("Vorgeschlagene Benefits")
-    if isinstance(benefits_result, list):
-        for benefit in benefits_result:
-            st.markdown(f"- {benefit}")
-    elif benefits_result:
-        st.markdown(benefits_result)
-    else:
-        st.info("Keine Benefits gefunden.")
-
-    col1, col2 = st.columns([1, 1])
-    if col1.button("← Zurück zu Anforderungen"):
-        st.session_state['current_step'] = 2
-    if col2.button("Weiter zur Zusammenfassung →"):
-        st.session_state['current_step'] = 4
-
-# Schritt 5: Zusammenfassung 
-elif st.session_state['current_step'] == 4:
-    st.subheader("Zusammenfassung aller Ergebnisse")
-    # Aufgaben Übersicht
-    st.markdown("**Aufgaben:**")
-    tasks_result = st.session_state.get('tasks', [])
-    if isinstance(tasks_result, list):
-        for task in tasks_result:
-            st.markdown(f"- {task}")
-    elif tasks_result:
-        st.markdown(tasks_result)
-    else:
-        st.text("Keine Aufgaben angegeben.")
-    # Anforderungen & Fähigkeiten Übersicht
-    st.markdown("**Anforderungen & Fähigkeiten:**")
-    skills_result = st.session_state.get('skills', [])
-    if isinstance(skills_result, list):
-        for skill in skills_result:
-            st.markdown(f"- {skill}")
-    elif skills_result:
-        st.markdown(skills_result)
-    else:
-        st.text("Keine Anforderungen angegeben.")
-    # Benefits Übersicht
-    st.markdown("**Benefits:**")
-    benefits_result = st.session_state.get('benefits', [])
-    if isinstance(benefits_result, list):
-        for benefit in benefits_result:
-            st.markdown(f"- {benefit}")
-    elif benefits_result:
-        st.markdown(benefits_result)
-    else:
-        st.text("Keine Benefits angegeben.")
-
-    st.success("Die Stellenausschreibung wurde vollständig generiert.")
-
-    # Option: Assistent neu starten für eine weitere Nutzung
-    if st.button("🔄 Assistent neu starten"):
-        # Alle genutzten Session-State Werte zurücksetzen
-        for key in ['content', 'tasks', 'skills', 'benefits']:
-            st.session_state[key] = "" if key == 'content' else None
-        st.session_state['current_step'] = 0
+elif step == 8:
+    st.title("Schritt 8 – Zusammenfassung")
+    # Zusammenfassung aller gesammelten Daten anzeigen
+    # Jobtitel separat aus Schritt 1
+    if st.session_state.get("job_title"):
+        st.markdown(f"**Jobtitel:** {st.session_state['job_title']}")
+    # Gehe durch Schritte 2 bis 7 und zeige ausgefüllte Felder
+    step_sections = {
+        2: "Basisinformationen",
+        3: "Rollenbeschreibung",
+        4: "Aufgaben",
+        5: "Anforderungen",
+        6: "Rahmenbedingungen",
+        7: "Bewerbungsprozess"
+    }
+    for st_num, section_name in step_sections.items():
+        # Sammle alle Werte aus diesem Schritt, die nicht leer sind
+        values = []
+        for key in KEYS[f"step{st_num}"]:
+            val = st.session_state.get(key)
+            # Wert berücksichtigen, wenn nicht None/leer
+            if val not in [None, ""]:
+                label = KEY_LABELS.get(key, key)
+                values.append(f"**{label}:** {val}")
+        if values:
+            st.subheader(section_name)
+            for item in values:
+                st.markdown(item)
+    # Navigations-Buttons: Zurück oder Neustart
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("◀️ Zurück"):
+            st.session_state["wizard_step"] = 7
+            st.rerun()
+    with col2:
+        if st.button("🔄 Neue Analyse beginnen"):
+            # Alle Felder zurücksetzen und zum Start
+            for key in ALL_KEYS:
+                st.session_state[key] = None
+            # Auch den Upload löschen, falls vorhanden
+            if "uploaded_file" in st.session_state:
+                st.session_state["uploaded_file"] = None
+            if "manual_text" in st.session_state:
+                st.session_state["manual_text"] = ""
+            st.session_state["wizard_step"] = 1
+            st.rerun()
