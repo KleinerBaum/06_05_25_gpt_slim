@@ -27,7 +27,7 @@ if step == 1:
         match_and_store_keys(raw_text, st.session_state)
         log_event("analysis_started", {"title": job_title})
         st.session_state['wizard_step'] = 2
-        st.experimental_rerun()
+        st.rerun()
 
 # 👉 Platzhalter: Schritt 2‑8 – kannst du analog implementieren (render‑Funktionen importieren etc.)
 st.sidebar.write(f"Aktueller Schritt: {step}/8")
