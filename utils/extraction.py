@@ -25,9 +25,11 @@ def extract_text_from_file(blob: bytes, filename: str) -> str:
 
 
 def match_and_store_keys(text: str, session_state):
-    """Label > Session‑State (nur leere Felder füllen)."""
-    for label, key in LABELS.items():
-        if label in text and session_state.get(key) in (None, ""):
-            value = text.split(label, 1)[1].split("\n", 1)[0].strip()
+    """Sucht Labels (regex, case-insensitiv, ':' optional) und füllt leere Felder."""
+    for pattern, key in LABELS.items():
+        match = re.search(pattern + r"\s*:?\s*(.+)", text, flags=re.IGNORECASE)
+        if match and session_state.get(key) in (None, ""):
+            # Nimm alles nach dem Label bis zum Zeilenumbruch
+            value = match.group(1).split("\n")[0].strip()
             session_state[key] = value
     session_state["parsed_data_raw"] = text
