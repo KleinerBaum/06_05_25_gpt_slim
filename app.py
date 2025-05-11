@@ -1,21 +1,16 @@
 import streamlit as st
-from utils.session_keys import init_session_state
-from models.model_selector import get_model
+from src.pages import wizard  # import the wizard module (8-step recruitment flow)
 
-st.set_page_config(page_title="VACalyser – KI‑Job‑Wizard", page_icon="🧩", layout="wide")
+# Set up page configuration (title, icon, layout, etc.)
+st.set_page_config(page_title="RoleCraft Recruitment Wizard",
+                   page_icon="🚀", layout="wide")  # wide layout for better use of space:contentReference[oaicite:0]{index=0}
 
-# Alle Session‑Keys anlegen
-aaa = init_session_state()
+# App-wide language selection (German or English)
+if "language" not in st.session_state:
+    st.session_state["language"] = "Deutsch"  # default to German (can default to English as needed)
+language_choice = st.sidebar.radio("🌐 Sprache / Language", ("Deutsch", "English"),
+                                   index=0 if st.session_state["language"] == "Deutsch" else 1)
+st.session_state["language"] = language_choice
 
-# Seitenleiste ➜ Modellwahl
-st.sidebar.title("⚙️ Einstellungen")
-use_openai = st.sidebar.toggle("OpenAI GPT‑4 nutzen", value=False)
-model = get_model(use_openai=use_openai)
-st.session_state['model'] = model
-
-st.sidebar.info("Wähle eine Seite (Home, Wizard …) im Seitenmenü oben links.")
-
-st.markdown("""
-## Willkommen bei **VACalyser**  
-Dein KI‑Assistent für strukturierte Recruiting‑Bedarfsanalysen.
-""")
+# Run the main wizard interface (UI logic is handled in wizard.py based on selected language)
+wizard.run_wizard()
