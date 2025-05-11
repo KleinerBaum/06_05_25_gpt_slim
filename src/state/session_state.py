@@ -22,12 +22,3 @@ def initialize_session_state() -> None:
 
     st.session_state.setdefault("trace_events", [])
     st.session_state["_vacalyser_state_init"] = True
-
-class SessionState:
-    """Helper class to manage Vacalyser session state across Streamlit reruns."""
-
-    def load_from_dict(self, data: dict):
-        """Load multiple fields into session state from a given dict (e.g., AI output)."""
-        for key, value in data.items():
-            if key in st.session_state:
-                st.session_state[key] = value
