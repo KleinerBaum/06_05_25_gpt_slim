@@ -4,7 +4,7 @@ import requests
 # Vacalyser modules and utilities
 from src.state.session_state import initialize_session_state
 from src.logic.trigger_engine import TriggerEngine, build_default_graph
-from src.processors import register_all_processors
+from src.logic.processors import register_all_processors
 from src.tools.file_tools import extract_text_from_file
 from src.tools.scraping_tools import scrape_company_site
 from src.utils.text_cleanup import clean_text
