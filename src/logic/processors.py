@@ -6,7 +6,7 @@ from __future__ import annotations
 from typing import Any
 import logging
 
-from src.trigger_engine import TriggerEngine
+from src.logic.trigger_engine import TriggerEngine
 from src.llm_utils import call_with_retry, USE_LOCAL_MODEL, local_client, openai
 
 # Use a fast model for suggestions
