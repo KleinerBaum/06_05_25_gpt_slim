@@ -1,72 +1,59 @@
 # pages/tech_overview.py
-"""Streamlit‑Seite: Technology Deep Dive & Wizard Flow
+"""Streamlit-Seite: Technology Deep Dive & Wizard Flow
 
 Für IT‑Spezialisten und Entscheider bietet diese Seite einen kompakten, aber
-technisch fundierten Überblick über den *Vacalyser*‑Stack sowie eine visuelle
+technisch fundierten Überblick über den *Vacalyser*-Stack sowie eine visuelle
 Darstellung des mehrstufigen Wizard‑Flows (Discovery‑Process).
 Ein Sprach‑ und Zielgruppenumschalter sorgt dafür, dass Texte sowohl für ein
 Fach‑Publikum (Tech‑interessiert/Tech‑savvy) als auch für nicht‑technische
 Stakeholder (Allgemein verständlich/General public) optimal angepasst werden.
 """
 
-from __future__ import annotations
 import streamlit as st
 
 # ---------------------------------------------------------------------------
-# Sprach‑ und Zielgruppenumschalter
+# Language & audience toggle
 # ---------------------------------------------------------------------------
-lang = st.radio("🌐 Sprache / Language", ("Deutsch", "English"), horizontal=True, key="lang_toggle")
+lang = st.radio("🌐 Sprache / Language", ("Deutsch", "English"), horizontal=True, key="lang")
 audience = st.radio(
     "🎯 Zielgruppe / Audience",
-    ("Tech‑interessiert", "Allgemein verständlich") if lang == "Deutsch" else ("Tech‑savvy", "General public"),
+    ("Tech-interessiert", "Allgemein verständlich") if lang == "Deutsch" else ("Tech-savvy", "General public"),
     horizontal=True,
-    key="audience_toggle"
+    key="audience",
 )
 
-TECH = "Tech‑interessiert" if lang == "Deutsch" else "Tech‑savvy"
+TECH_AUDIENCE = "Tech-interessiert" if lang == "Deutsch" else "Tech-savvy"
 
 # ---------------------------------------------------------------------------
-# Technologie‑Kacheln je Sprache & Zielgruppe
+# Technology catalogue
 # ---------------------------------------------------------------------------
-tech_info: dict[str, dict[str, list[tuple[str, str]]]] = {
+tech_info = {
     "Deutsch": {
-        # ——— Tiefer technischer Einblick für IT‑Spezialisten ———
-        "Tech‑interessiert": [
-            ("Retrieval‑Augmented Generation (RAG)",
-             "FAISS bzw. künftig ChromaDB/Weaviate liefern Vektor‑Suche über mehr
-             als 400 k ESCO‑Skills & Domain‑Korpora; RAG‑Pipelines werden über
-             LangChain orchestriert."),
-            ("LangChain Agents + OpenAI Function Calling",
-             "Deterministische Tool‑Aufrufe (PDF‑Parser, ESCO‑Lookup,
-             Markdown‑Renderer) mit JSON‑Schemas für robustes Error‑Handling."),
+        "Tech-interessiert": [
+            ("Retrieval-Augmented Generation (RAG)",
+             "FAISS bzw. künftig ChromaDB/Weaviate liefern Vektor‑Suche über mehr als 400 000 ESCO‑Skills und Domain‑Korpora; LangChain orchestriert die RAG‑Pipeline."),
+            ("LangChain Agents & OpenAI Function Calling",
+             "Deterministische Tool‑Aufrufe (PDF‑Parser, ESCO‑Lookup, Markdown‑Renderer) mittels JSON‑Schemas für robustes Error‑Handling."),
             ("Embedding‑Model",
-             "OpenAI *text‑embedding‑3‑small* (8 k‑Dim) – alternative
-             Selbst‑Hosting via *e5‑large‑v2* ist vorbereitet."),
-            ("Streaming Responses",
-             "Tokenweises UI‑Streaming (< 300 ms TTFB) für flüssige Nutzer‑Erfahrung."),
-            ("CI/CD Pipeline",
-             "GitHub Actions → Docker → Terraform; Canary‑Deployments auf
-             Kubernetes (Hetzner Cloud) mit automatischem Rollback."),
+             "OpenAI *text-embedding-3-small* (8 k Dim); selbstgehostete Alternative *e5-large-v2* ist vorbereitet."),
+            ("Streaming Responses",
+             "Tokenweises UI‑Streaming (< 300 ms TTFB) für flüssige Nutzer‑Erfahrung."),
+            ("CI/CD Pipeline",
+             "GitHub Actions → Docker → Terraform; Canary‑Deployments auf Kubernetes mit automatischem Rollback."),
             ("Observability & Kosten‑Tracking",
-             "OpenTelemetry Tracing + Prometheus /Grafana; Token‑Kosten pro
-             Request in st.session_state."),
+             "OpenTelemetry Tracing + Prometheus/Grafana; Token‑Kosten pro Request im UI sichtbar."),
             ("Security Layer",
-             "OIDC‑basiertes Secrets‑Management (GitHub → Vault) & zweistufige
-             Rollen‑Logik (Recruiter vs. Admin)."),
-            ("Event‑Driven Wizard Flow",
-             "State‑Maschine (XState‑Pattern) triggert dynamische Fragen und
-             persistiert Zwischenergebnisse als JSON Graph."),
-            ("Infrastructure as Code",
-             "Komplette Cloud‑Provisionierung in Terraform 1.7 mit automatischen
-             Drift‑Detections."),
+             "OIDC‑basiertes Secrets‑Management und zweistufige Rollenlogik (Recruiter vs. Admin)."),
+            ("Event‑Driven Wizard Flow",
+             "Finite‑State‑Machine triggert dynamische Fragen und speichert Zwischenergebnisse als JSON‑Graph."),
+            ("Infrastructure as Code",
+             "Vollständige Cloud‑Provisionierung in Terraform 1.7 mit Drift‑Detection."),
         ],
-        # ——— Vereinfachte Beschreibung für Business‑Lesende ———
         "Allgemein verständlich": [
             ("Künstliche Intelligenz",
-             "Vacalyser nutzt modernste KI, um Stellenanforderungen präzise zu
-             verstehen und passende Kompetenzen vorzuschlagen."),
+             "Vacalyser nutzt modernste KI, um Stellenanforderungen präzise zu verstehen und passende Kompetenzen vorzuschlagen."),
             ("Schlaue Suche",
-             "Eine Spezial‑Suche findet blitzschnell relevante Fähigkeiten & Aufgaben."),
+             "Eine Spezial‑Suche findet blitzschnell relevante Fähigkeiten und Aufgaben."),
             ("Fließende Antworten",
              "Antworten erscheinen Stück für Stück – Wartezeiten verkürzen sich."),
             ("Automatische Updates",
@@ -76,40 +63,33 @@ tech_info: dict[str, dict[str, list[tuple[str, str]]]] = {
         ],
     },
     "English": {
-        "Tech‑savvy": [
-            ("Retrieval‑Augmented Generation (RAG)",
-             "FAISS – future upgrade to ChromaDB/Weaviate – provides vector search
-             across 400 k+ ESCO skills & domain corpora; orchestrated via LangChain."),
-            ("LangChain Agents & OpenAI Function Calling",
-             "Deterministic tool invocation (PDF parser, ESCO lookup, Markdown renderer)
-             using strict JSON schemas for resilient error handling."),
-            ("Embedding Model",
-             "OpenAI *text‑embedding‑3‑small* (8 k dim); self‑hosted fallback with
-             *e5‑large‑v2* prepared."),
-            ("Streaming Responses",
+        "Tech-savvy": [
+            ("Retrieval-Augmented Generation (RAG)",
+             "FAISS – future upgrade to ChromaDB/Weaviate – provides vector search across 400 k+ ESCO skills & domain corpora, orchestrated via LangChain."),
+            ("LangChain Agents & OpenAI Function Calling",
+             "Deterministic tool invocation (PDF parser, ESCO lookup, Markdown renderer) using strict JSON schemas for resilient error handling."),
+            ("Embedding Model",
+             "OpenAI *text-embedding-3-small* (8 k dim); self‑hosted fallback *e5-large-v2* prepared."),
+            ("Streaming Responses",
              "Sub‑300 ms TTFB with token‑level UI streaming for a snappy UX."),
-            ("CI/CD Pipeline",
-             "GitHub Actions → Docker → Terraform; canary deployments on Kubernetes
-             (Hetzner Cloud) with auto‑rollback."),
-            ("Observability & Cost Governance",
-             "OpenTelemetry tracing + Prometheus/Grafana; token cost per request
-             surfaced in st.session_state."),
-            ("Security Layer",
-             "OIDC‑backed secret management (GitHub → Vault) & dual role model (Recruiter vs. Admin)."),
-            ("Event‑Driven Wizard Flow",
-             "Finite‑state machine (XState pattern) triggers dynamic questions and
-             stores interim results as a JSON graph."),
-            ("Infrastructure as Code",
-             "Full cloud provisioning in Terraform 1.7 with automatic drift detection."),
+            ("CI/CD Pipeline",
+             "GitHub Actions → Docker → Terraform; canary deployments on Kubernetes with auto‑rollback."),
+            ("Observability & Cost Governance",
+             "OpenTelemetry tracing + Prometheus/Grafana; token cost per request surfaced in the UI."),
+            ("Security Layer",
+             "OIDC‑backed secret management and dual role model (Recruiter vs. Admin)."),
+            ("Event‑Driven Wizard Flow",
+             "Finite state machine triggers dynamic questions and stores interim results as a JSON graph."),
+            ("Infrastructure as Code",
+             "Full cloud provisioning in Terraform 1.7 with automatic drift detection."),
         ],
         "General public": [
             ("Artificial Intelligence",
-             "Vacalyser uses cutting‑edge AI to understand job requirements and
-             suggest matching skills."),
+             "Vacalyser uses cutting‑edge AI to understand job requirements and suggest matching skills."),
             ("Smart Search",
              "A specialised search engine instantly finds relevant skills and tasks."),
             ("Live Answers",
-             "Replies appear gradually, so you don't have to wait."),
+             "Replies appear gradually, so you don’t have to wait."),
             ("Automatic Updates",
              "New versions are rolled out silently with no downtime."),
             ("Security & Privacy",
@@ -119,61 +99,68 @@ tech_info: dict[str, dict[str, list[tuple[str, str]]]] = {
 }
 
 # ---------------------------------------------------------------------------
-# Wizard‑Flow (Graph) – nur für Tech‑Publikum
+# Wizard flow definition
 # ---------------------------------------------------------------------------
 wizard_steps = [
     ("Intake", "Job‑Titel & Dokumente" if lang == "Deutsch" else "Job title & docs"),
     ("Parse", "AI‑Parsing"),
     ("Enrich", "ESCO‑Mapping"),
-    ("QA", "Dynamic Q&A"),
+    ("QA", "Dynamic Q&A"),
     ("Draft", "Profil‑Entwurf" if lang == "Deutsch" else "Draft profile"),
     ("Review", "Freigabe" if lang == "Deutsch" else "Review"),
     ("Export", "Export (PDF/MD)"),
 ]
 
 def render_wizard_graph() -> None:
-    dot = "digraph wizard {\n  rankdir=LR;\n  node [shape=box style=\"rounded,filled\" fontname=Helvetica color=#5b8def fillcolor=#eef4ff];\n"  # noqa: E501
+    dot = (
+        "digraph wizard {\n"
+        "  rankdir=LR;\n"
+        "  node [shape=box style=\"rounded,filled\" fontname=Helvetica color=#5b8def fillcolor=#eef4ff];\n"
+    )
     for step, label in wizard_steps:
-        dot += f'  {step} [label="{label}"];\n'
-    for i in range(len(wizard_steps) - 1):
-        dot += f"  {wizard_steps[i][0]} -> {wizard_steps[i + 1][0]};\n"
+        dot += f"  {step} [label=\"{label}\"];\n"
+    for idx in range(len(wizard_steps) - 1):
+        dot += f"  {wizard_steps[idx][0]} -> {wizard_steps[idx + 1][0]};\n"
     dot += "}"
     st.graphviz_chart(dot)
 
 # ---------------------------------------------------------------------------
 # Layout
 # ---------------------------------------------------------------------------
-if audience == TECH:
-    title = "🛠️ Technology Deep Dive" if lang == "English" else "🛠️ Technischer Deep Dive"
+if audience == TECH_AUDIENCE and lang == "Deutsch":
+    title = "🛠️ Technischer Deep Dive"
+elif audience == TECH_AUDIENCE:
+    title = "🛠️ Technology Deep Dive"
+elif lang == "Deutsch":
+    title = "🛠️ Technologischer Überblick"
 else:
-    title = "🛠️ Technology Overview" if lang == "English" else "🛠️ Technologischer Überblick"
+    title = "🛠️ Technology Overview"
 
 st.title(title)
 
-intro_de = "Nachfolgend findest du die Schlüsseltechnologien, die Vacalyser antreiben, " \
-          "sowie einen Graphen, der den Discovery‑Prozess Schritt für Schritt veranschaulicht."
-intro_en = "Below you can explore the core technologies powering Vacalyser and a graph " \
-          "visualising each step of the discovery process."
+intro = (
+    "Nachfolgend findest du die Schlüsseltechnologien, die Vacalyser antreiben, "
+    "sowie eine Grafik, die den Discovery‑Prozess Schritt für Schritt veranschaulicht."
+    if lang == "Deutsch" else
+    "Below you can explore the core technologies powering Vacalyser together with a graph "
+    "illustrating each step of the discovery process."
+)
 
-st.markdown(intro_de if lang == "Deutsch" else intro_en)
+st.markdown(intro)
 
-# ——— Technologie‑Kacheln ———
+# ─── Technology cards ───
 for tech, desc in tech_info[lang][audience]:
     st.markdown(f"### 🔹 {tech}\n{desc}")
 
-# ——— Wizard‑Flow‑Graph nur für Tech‑Publikum ———
-if audience == TECH:
+# ─── Wizard flow graph for tech audience ───
+if audience == TECH_AUDIENCE:
     st.divider()
-    graph_head_de = "#### 🔄 Wizard‑Flow & Zustands­maschine"
-    graph_head_en = "#### 🔄 Wizard flow & state machine"
-    st.markdown(graph_head_de if lang == "Deutsch" else graph_head_en)
+    st.markdown("#### 🔄 Wizard‑Flow & State Machine" if lang == "Deutsch" else "#### 🔄 Wizard Flow & State Machine")
     render_wizard_graph()
 
 st.divider()
 
-footer_de = "Die gezeigte Architektur ist modular erweiterbar und bildet eine " \
-            "zukunftssichere Basis für hochskalierbare Recruiting‑Workflows."
-footer_en = "The presented stack is modular and future‑proof, enabling scalable " \
-            "recruiting workflows with low operational overhead."
-
-st.info(footer_de if lang == "Deutsch" else footer_en)
+st.info(
+    "Die gezeigte Architektur ist modular erweiterbar und bildet eine zukunftssichere Basis für hochskalierbare Recruiting‑Workflows." if lang == "Deutsch" else
+    "The presented stack is modular and future‑proof, enabling highly scalable recruiting workflows with minimal operational overhead."
+)
