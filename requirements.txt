@@ -7,3 +7,4 @@ python-docx
 beautifulsoup4
 tenacity
 pydantic
+graphviz>=0.20
