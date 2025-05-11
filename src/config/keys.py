@@ -1,6 +1,12 @@
-# keys.py
-# ─────────────────────────────────────────────────────────────────────────────
-"""Canonical list of wizard fields grouped by step (★ mandatory, ◆ recommended, ⬚ optional)."""
+# src/config/keys.py
+
+"""
+Canonical list of every wizard field, grouped by step.
+The two symbols used below:
+★ = mandatory field   ◆ = recommended    ⬚ = optional
+(Only informative – they’re all strings in the lists.)
+"""
+
 
 STEP_KEYS: dict[int, list[str]] = {
     1: [  # Step 1: Discovery
