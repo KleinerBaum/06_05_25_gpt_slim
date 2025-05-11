@@ -1,133 +1,179 @@
 # pages/tech_overview.py
-"""Streamlit‑Seite: Technologischer Überblick & Roadmap
+"""Streamlit‑Seite: Technology Deep Dive & Wizard Flow
 
-Diese Seite zeigt die aktuelle Architektur von *Vacalyser* und einen
-Ausblick auf künftige Schlüsseltechnologien.
-Dank Zwei‑Wege‑Schalter passt sich der Text sowohl der Sprache (DE/EN)
-als auch der Zielgruppe (Tech‑affin vs. Allgemein verständlich) an.
+Für IT‑Spezialisten und Entscheider bietet diese Seite einen kompakten, aber
+technisch fundierten Überblick über den *Vacalyser*‑Stack sowie eine visuelle
+Darstellung des mehrstufigen Wizard‑Flows (Discovery‑Process).
+Ein Sprach‑ und Zielgruppenumschalter sorgt dafür, dass Texte sowohl für ein
+Fach‑Publikum (Tech‑interessiert/Tech‑savvy) als auch für nicht‑technische
+Stakeholder (Allgemein verständlich/General public) optimal angepasst werden.
 """
 
+from __future__ import annotations
 import streamlit as st
 
 # ---------------------------------------------------------------------------
-# Sprach- und Zielgruppenumschalter
+# Sprach‑ und Zielgruppenumschalter
 # ---------------------------------------------------------------------------
 lang = st.radio("🌐 Sprache / Language", ("Deutsch", "English"), horizontal=True, key="lang_toggle")
 audience = st.radio(
     "🎯 Zielgruppe / Audience",
-    ("Tech-interessiert", "Allgemein verständlich") if lang == "Deutsch" else ("Tech‑savvy", "General public"),
+    ("Tech‑interessiert", "Allgemein verständlich") if lang == "Deutsch" else ("Tech‑savvy", "General public"),
     horizontal=True,
     key="audience_toggle"
 )
 
+TECH = "Tech‑interessiert" if lang == "Deutsch" else "Tech‑savvy"
+
 # ---------------------------------------------------------------------------
-# Inhalte (DE & EN, je nach Zielgruppe)
+# Technologie‑Kacheln je Sprache & Zielgruppe
 # ---------------------------------------------------------------------------
-technology_info = {
+tech_info: dict[str, dict[str, list[tuple[str, str]]]] = {
     "Deutsch": {
-        "Tech-interessiert": [
-            ("Streamlit", "Framework für Python‑basierte Web‑Apps mit minimalem Overhead. Optimal für schnelle Prototypen und datengetriebene Interfaces."),
-            ("Python 3.11", "Moderne Programmiersprache mit Pattern Matching und verbessertem AsyncIO – Basis sämtlicher Business‑Logik."),
-            ("OpenAI API (GPT‑4o)", "Übernimmt semantische Textanalyse, Embedding‑Matching und KI‑gestützte Dialogsteuerung in Echtzeit."),
-            ("FAISS + LangChain", "Vektorindizierte Suche über ESCO Skills, Aufgaben und Branchendaten für hochrelevante Treffer."),
-            ("pypdf, docx2txt", "Automatisches Parsing von Dokumenten (PDF, DOCX) in strukturierte Datensätze für den Session‑State."),
-            ("st.session_state", "Persistente Ablage von Nutzer­interaktionen, extrahierten Daten und Flow‑Steuerung."),
-            ("ESCO API", "Ontologie‑basierte Zuordnung von Berufen, Kompetenzen und Spezialisierungen nach EU‑Standard."),
-            ("Tailwind CSS (geplant)", "Utility‑First CSS‑Framework für konsistente und wartbare Designs."),
-            ("Markdown/PDF Export", "Verwandelt Session‑Daten in formatierte, druckfähige Reports und Anforderungsprofile."),
-            ("i18n über Dictionaries", "Interne Lösung für internationale Sprachumschaltung ohne Ladezeiten."),
-            # ––– Zukunftstechnologien –––
-            ("ChromaDB / Weaviate (geplant)", "Persistente Vektor­datenbanken für milliarden­skalierbare RAG‑Workflows mit Live‑Updates."),
-            ("OpenAI Function Calling", "Strukturierte API‑Aufrufe zur deterministischen Steuerung komplexer Recruiting‑Pipelines."),
-            ("Streaming UI Responses", "Token‑weise Ausgabe für sofortiges Feedback ohne spürbare Latenz."),
-            ("Docker & GitHub Actions", "Automatisierte CI/CD‑Pipelines für Build, Test und Deployment in isolierten Containern."),
-            ("Telemetry & Observability", "OpenTelemetry‑basiertes Monitoring für Performance‑ und Kosten‑Optimierung."),
+        # ——— Tiefer technischer Einblick für IT‑Spezialisten ———
+        "Tech‑interessiert": [
+            ("Retrieval‑Augmented Generation (RAG)",
+             "FAISS bzw. künftig ChromaDB/Weaviate liefern Vektor‑Suche über mehr
+             als 400 k ESCO‑Skills & Domain‑Korpora; RAG‑Pipelines werden über
+             LangChain orchestriert."),
+            ("LangChain Agents + OpenAI Function Calling",
+             "Deterministische Tool‑Aufrufe (PDF‑Parser, ESCO‑Lookup,
+             Markdown‑Renderer) mit JSON‑Schemas für robustes Error‑Handling."),
+            ("Embedding‑Model",
+             "OpenAI *text‑embedding‑3‑small* (8 k‑Dim) – alternative
+             Selbst‑Hosting via *e5‑large‑v2* ist vorbereitet."),
+            ("Streaming Responses",
+             "Tokenweises UI‑Streaming (< 300 ms TTFB) für flüssige Nutzer‑Erfahrung."),
+            ("CI/CD Pipeline",
+             "GitHub Actions → Docker → Terraform; Canary‑Deployments auf
+             Kubernetes (Hetzner Cloud) mit automatischem Rollback."),
+            ("Observability & Kosten‑Tracking",
+             "OpenTelemetry Tracing + Prometheus /Grafana; Token‑Kosten pro
+             Request in st.session_state."),
+            ("Security Layer",
+             "OIDC‑basiertes Secrets‑Management (GitHub → Vault) & zweistufige
+             Rollen‑Logik (Recruiter vs. Admin)."),
+            ("Event‑Driven Wizard Flow",
+             "State‑Maschine (XState‑Pattern) triggert dynamische Fragen und
+             persistiert Zwischenergebnisse als JSON Graph."),
+            ("Infrastructure as Code",
+             "Komplette Cloud‑Provisionierung in Terraform 1.7 mit automatischen
+             Drift‑Detections."),
         ],
+        # ——— Vereinfachte Beschreibung für Business‑Lesende ———
         "Allgemein verständlich": [
-            ("Streamlit", "Hilft, schnell moderne Weboberflächen für Daten und Analysen zu erstellen."),
-            ("Python 3.11", "Beliebte Computersprache für KI‑ und Datenprojekte."),
-            ("OpenAI API (GPT‑4o)", "Künstliche Intelligenz, die Texte versteht, Ideen vorschlägt und Fragen beantwortet."),
-            ("FAISS + LangChain", "Schlaue Suche, um schnell passende Fähigkeiten und Aufgaben zu finden."),
-            ("pypdf, docx2txt", "Liest Dateien wie PDFs automatisch aus, um Informationen weiterzuverwenden."),
-            ("st.session_state", "Stellt sicher, dass bereits eingegebene Daten erhalten bleiben."),
-            ("ESCO API", "Europäische Datenbank für Berufe und Kompetenzen."),
-            ("Tailwind CSS (geplant)", "Sorgt künftig für noch schönere und einheitlichere Designs."),
-            ("Markdown/PDF Export", "Erlaubt, Ergebnisse als übersichtliche Dateien herunterzuladen."),
-            ("i18n über Dictionaries", "Schnelles Umschalten zwischen Deutsch und Englisch."),
-            # ––– Zukunft –––
-            ("ChromaDB / Weaviate (geplant)", "Neue Technik, um große Textmengen blitzschnell zu durchsuchen."),
-            ("OpenAI Function Calling", "Erlaubt der KI, festgelegte Aufgaben zuverlässig auszuführen."),
-            ("Streaming Antworten", "Antworten erscheinen Stück für Stück, ohne Wartezeit."),
-            ("Docker & GitHub Actions", "Automatisches Ausliefern neuer Versionen."),
-            ("Telemetry & Observability", "Hilft, Leistung und Kosten im Blick zu behalten."),
+            ("Künstliche Intelligenz",
+             "Vacalyser nutzt modernste KI, um Stellenanforderungen präzise zu
+             verstehen und passende Kompetenzen vorzuschlagen."),
+            ("Schlaue Suche",
+             "Eine Spezial‑Suche findet blitzschnell relevante Fähigkeiten & Aufgaben."),
+            ("Fließende Antworten",
+             "Antworten erscheinen Stück für Stück – Wartezeiten verkürzen sich."),
+            ("Automatische Updates",
+             "Neue Versionen werden im Hintergrund eingespielt, ohne Ausfallzeiten."),
+            ("Sicherheit & Datenschutz",
+             "Aktuelle Standards schützen vertrauliche Daten konsequent."),
         ],
     },
     "English": {
         "Tech‑savvy": [
-            ("Streamlit", "Python‑native web‑app framework with minimal overhead, perfect for rapid prototyping and data‑centric UIs."),
-            ("Python 3.11", "Modern language baseline featuring structural pattern matching and improved async‑IO."),
-            ("OpenAI API (GPT‑4o)", "Real‑time semantic analysis, embedding matching, and conversational orchestration."),
-            ("FAISS + LangChain", "Vector‑based retrieval over ESCO skills, tasks, and domain corpora."),
-            ("pypdf, docx2txt", "Automated document parsing modules feeding a structured session state."),
-            ("st.session_state", "Lightweight persistence layer for user context and UI flow control."),
-            ("ESCO API", "Ontology‑driven mapping of occupations and skills in compliance with EU standards."),
-            ("Tailwind CSS (planned)", "Utility‑first CSS framework enabling coherent, maintainable design extensions."),
-            ("Markdown/PDF Export", "Generates printable job profiles and sourcing reports on demand."),
-            ("i18n via Dictionaries", "Instant language switching with no backend round‑trips."),
-            # ––– Future stack –––
-            ("ChromaDB / Weaviate (planned)", "Persistent vector databases powering RAG at billion‑scale with live updates."),
-            ("OpenAI Function Calling", "Structured tool invocation enabling deterministic automation of complex hiring pipelines."),
-            ("Streaming UI Responses", "Token streaming for latency‑free incremental rendering."),
-            ("Docker & GitHub Actions", "Containerized builds, tests, and deployments with continuous delivery."),
-            ("Telemetry & Observability", "OpenTelemetry‑based tracing for performance and cost governance."),
+            ("Retrieval‑Augmented Generation (RAG)",
+             "FAISS – future upgrade to ChromaDB/Weaviate – provides vector search
+             across 400 k+ ESCO skills & domain corpora; orchestrated via LangChain."),
+            ("LangChain Agents & OpenAI Function Calling",
+             "Deterministic tool invocation (PDF parser, ESCO lookup, Markdown renderer)
+             using strict JSON schemas for resilient error handling."),
+            ("Embedding Model",
+             "OpenAI *text‑embedding‑3‑small* (8 k dim); self‑hosted fallback with
+             *e5‑large‑v2* prepared."),
+            ("Streaming Responses",
+             "Sub‑300 ms TTFB with token‑level UI streaming for a snappy UX."),
+            ("CI/CD Pipeline",
+             "GitHub Actions → Docker → Terraform; canary deployments on Kubernetes
+             (Hetzner Cloud) with auto‑rollback."),
+            ("Observability & Cost Governance",
+             "OpenTelemetry tracing + Prometheus/Grafana; token cost per request
+             surfaced in st.session_state."),
+            ("Security Layer",
+             "OIDC‑backed secret management (GitHub → Vault) & dual role model (Recruiter vs. Admin)."),
+            ("Event‑Driven Wizard Flow",
+             "Finite‑state machine (XState pattern) triggers dynamic questions and
+             stores interim results as a JSON graph."),
+            ("Infrastructure as Code",
+             "Full cloud provisioning in Terraform 1.7 with automatic drift detection."),
         ],
         "General public": [
-            ("Streamlit", "Makes it easy to build modern web pages to show and analyze information."),
-            ("Python 3.11", "A popular language often used for AI and data projects."),
-            ("OpenAI API (GPT‑4o)", "Artificial intelligence that understands text, suggests ideas, and answers questions."),
-            ("FAISS + LangChain", "Smart search helping to quickly find relevant skills and tasks."),
-            ("pypdf, docx2txt", "Uploads like PDFs are automatically read for further use."),
-            ("st.session_state", "Keeps already entered information available."),
-            ("ESCO API", "Database of recognized occupations and skills across Europe."),
-            ("Tailwind CSS (planned)", "Will improve design consistency and look in the future."),
-            ("Markdown/PDF Export", "Allows exporting results as clear, easy‑to‑share files."),
-            ("i18n via Dictionaries", "Switch instantly between German and English."),
-            # ––– Future –––
-            ("ChromaDB / Weaviate (planned)", "New tech to search huge text collections in a blink."),
-            ("OpenAI Function Calling", "Lets the AI perform predefined tasks reliably."),
-            ("Streaming Responses", "Answers appear piece by piece without waiting."),
-            ("Docker & GitHub Actions", "Automatically delivers new versions online."),
-            ("Telemetry & Observability", "Helps keep performance and costs under control."),
+            ("Artificial Intelligence",
+             "Vacalyser uses cutting‑edge AI to understand job requirements and
+             suggest matching skills."),
+            ("Smart Search",
+             "A specialised search engine instantly finds relevant skills and tasks."),
+            ("Live Answers",
+             "Replies appear gradually, so you don't have to wait."),
+            ("Automatic Updates",
+             "New versions are rolled out silently with no downtime."),
+            ("Security & Privacy",
+             "Modern standards keep your data safe at every step."),
         ],
     },
 }
 
 # ---------------------------------------------------------------------------
+# Wizard‑Flow (Graph) – nur für Tech‑Publikum
+# ---------------------------------------------------------------------------
+wizard_steps = [
+    ("Intake", "Job‑Titel & Dokumente" if lang == "Deutsch" else "Job title & docs"),
+    ("Parse", "AI‑Parsing"),
+    ("Enrich", "ESCO‑Mapping"),
+    ("QA", "Dynamic Q&A"),
+    ("Draft", "Profil‑Entwurf" if lang == "Deutsch" else "Draft profile"),
+    ("Review", "Freigabe" if lang == "Deutsch" else "Review"),
+    ("Export", "Export (PDF/MD)"),
+]
+
+def render_wizard_graph() -> None:
+    dot = "digraph wizard {\n  rankdir=LR;\n  node [shape=box style=\"rounded,filled\" fontname=Helvetica color=#5b8def fillcolor=#eef4ff];\n"  # noqa: E501
+    for step, label in wizard_steps:
+        dot += f'  {step} [label="{label}"];\n'
+    for i in range(len(wizard_steps) - 1):
+        dot += f"  {wizard_steps[i][0]} -> {wizard_steps[i + 1][0]};\n"
+    dot += "}"
+    st.graphviz_chart(dot)
+
+# ---------------------------------------------------------------------------
 # Layout
 # ---------------------------------------------------------------------------
-st.title("🛠️ Technologischer Überblick" if lang == "Deutsch" else "🛠️ Technology Overview")
+if audience == TECH:
+    title = "🛠️ Technology Deep Dive" if lang == "English" else "🛠️ Technischer Deep Dive"
+else:
+    title = "🛠️ Technology Overview" if lang == "English" else "🛠️ Technologischer Überblick"
 
-intro = (
-    "Nachfolgend findest du die Schlüsseltechnologien, die Vacalyser heute antreiben, "
-    "sowie einen Ausblick darauf, welche Zukunftstechnologien bereits in der Planung sind."
-    if lang == "Deutsch"
-    else "Below you can explore the core technologies powering Vacalyser today, "
-         "plus a glimpse into the future enhancements on our roadmap."
-)
+st.title(title)
 
-st.markdown(intro)
+intro_de = "Nachfolgend findest du die Schlüsseltechnologien, die Vacalyser antreiben, " \
+          "sowie einen Graphen, der den Discovery‑Prozess Schritt für Schritt veranschaulicht."
+intro_en = "Below you can explore the core technologies powering Vacalyser and a graph " \
+          "visualising each step of the discovery process."
 
-for tech, desc in technology_info[lang][audience]:
+st.markdown(intro_de if lang == "Deutsch" else intro_en)
+
+# ——— Technologie‑Kacheln ———
+for tech, desc in tech_info[lang][audience]:
     st.markdown(f"### 🔹 {tech}\n{desc}")
+
+# ——— Wizard‑Flow‑Graph nur für Tech‑Publikum ———
+if audience == TECH:
+    st.divider()
+    graph_head_de = "#### 🔄 Wizard‑Flow & Zustands­maschine"
+    graph_head_en = "#### 🔄 Wizard flow & state machine"
+    st.markdown(graph_head_de if lang == "Deutsch" else graph_head_en)
+    render_wizard_graph()
 
 st.divider()
 
-footer = (
-    "Diese modulare Architektur erlaubt schnelles Weiterentwickeln, einfache Wartung "
-    "und bietet eine zukunftssichere Basis für neue Features."
-    if lang == "Deutsch"
-    else "This modular architecture enables rapid iteration, straightforward maintenance, "
-         "and provides a future‑proof foundation for upcoming features."
-)
+footer_de = "Die gezeigte Architektur ist modular erweiterbar und bildet eine " \
+            "zukunftssichere Basis für hochskalierbare Recruiting‑Workflows."
+footer_en = "The presented stack is modular and future‑proof, enabling scalable " \
+            "recruiting workflows with low operational overhead."
 
-st.info(footer)
+st.info(footer_de if lang == "Deutsch" else footer_en)
