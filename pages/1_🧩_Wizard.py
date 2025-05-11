@@ -1,8 +1,6 @@
 from __future__ import annotations
 import streamlit as st
 import requests
-from bs4 import BeautifulSoup
-
 # Vacalyser modules and utilities
 from src.state.session_state import initialize_session_state
 from src.logic.trigger_engine import TriggerEngine, build_default_graph
@@ -287,7 +285,6 @@ def display_step_summary(step: int) -> None:
 # Step 1: Start Discovery (job title & source input)
 def start_discovery_page():
     # Language toggle (persists in session_state['lang'])
-    st.radio("🌐 Sprache / Language", ("Deutsch", "English"), horizontal=True, key="lang")
     lang = st.session_state.get("lang", "English")
     # Introduction text
     if lang == "Deutsch":
