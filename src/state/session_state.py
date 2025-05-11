@@ -25,27 +25,6 @@ def initialize_session_state() -> None:
 
 class SessionState:
     """Helper class to manage Vacalyser session state across Streamlit reruns."""
-    def __init__(self):
-        # Ensure all expected keys exist in session_state
-        for step, field_list in keys.STEP_KEYS.items():
-            for field in field_list:
-                if field not in st.session_state:
-                    st.session_state[field] = None
-
-    def reset(self):
-        """Clear all job spec fields from session state (e.g., to start a new session)."""
-        for step, field_list in keys.STEP_KEYS.items():
-            for field in field_list:
-                if field in st.session_state:
-                    del st.session_state[field]
-
-    def get_job_spec_dict(self):
-        """Return a dictionary of all JobSpec fields from session state."""
-        spec = {}
-        for step, field_list in keys.STEP_KEYS.items():
-            for field in field_list:
-                spec[field] = st.session_state.get(field)
-        return spec
 
     def load_from_dict(self, data: dict):
         """Load multiple fields into session state from a given dict (e.g., AI output)."""
