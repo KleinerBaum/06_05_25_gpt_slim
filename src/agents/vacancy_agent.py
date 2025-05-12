@@ -6,28 +6,25 @@ import json
 import logging
 import time
 from typing import Any, Dict, Iterator, List
+
 import requests
-from src.models.job_models import JobSpec  # Pydantic model for job spec
-from src.tools.scraping_tools import scrape_company_site
-from src.tools.file_tools import extract_text_from_file
-from src.utils.summarize import summarize_text
-+import openai
-+import streamlit as st
-+import src.config as config
+import openai
 
-# Set OpenAI API key from Streamlit secrets
-USE_LOCAL_MODEL = config.USE_LOCAL_MODE
+# Globale Konfiguration laden (Modellwahl, API-Schlüssel, usw.)
+from src.config import config
 
-# Expose LocalLLMClient for external use
-__all__ = ["LocalLLMClient"]
+# Logger konfigurieren
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Custom exception for Ollama errors
+# Eigene Exception für Ollama-spezifische Fehler
 class _OllamaError(RuntimeError):
-    """Raised when the Ollama server returns an error message."""
+    """Wird ausgelöst, wenn der Ollama-Server einen Fehler zurückgibt."""
+    pass
 
-# Local Ollama client for LLM
+# Client-Klasse für lokales LLM (Ollama)
 class LocalLLMClient:
-    """Small wrapper for Ollama's HTTP generate endpoint (non-streaming and streaming)."""
+    """Wrapper für Ollamas HTTP-Endpunkt (non-streaming und streaming)."""
     def __init__(self, model_name: str, host: str = "localhost", port: int = 11434,
                  request_timeout: int = 120, log_level: int = logging.INFO) -> None:
         self.model = model_name
@@ -37,13 +34,13 @@ class LocalLLMClient:
         self._log = logging.getLogger("LocalLLMClient")
 
     def generate(self, text: str, system: str | None = None, **params) -> str:
-        """Perform a single completion request (no streaming)."""
+        """Führt eine einmalige Completion-Anfrage (kein Streaming) durch."""
         payload = self._build_payload(text, system, stream=False, **params)
         data = self._post("/generate", payload)
         return data.get("response", "").rstrip()
 
     def generate_iter(self, text: str, system: str | None = None, **params) -> Iterator[str]:
-        """Stream completion tokens as they arrive (yields one chunk at a time)."""
+        """Streamt Completion-Ergebnisse tokenweise (Iterator über Teil-Ergebnisse)."""
         payload = self._build_payload(text, system, stream=True, **params)
         with requests.post(self.base_url + "/generate", json=payload, stream=True, timeout=self.timeout) as resp:
             resp.raise_for_status()
@@ -64,9 +61,9 @@ class LocalLLMClient:
         payload = {
             "model": self.model,
             "prompt": prompt,
-            "stream": stream,
+            "stream": stream
         }
-        payload.update(extra)  # e.g., temperature, top_p
+        payload.update(extra)
         return payload
 
     def _post(self, path: str, json_body: dict) -> dict:
@@ -82,78 +79,69 @@ class LocalLLMClient:
             raise _OllamaError(data["error"])
         return data
 
-# Determine runtime mode (OpenAI API vs LocalAI) from environment variable
-USE_LOCAL_MODEL = os.getenv("VACALYSER_LOCAL_MODE", "0") == "1"
+# Modus festlegen (OpenAI vs. lokales Modell) basierend auf Konfiguration
+USE_LOCAL_MODEL = config.USE_LOCAL_MODEL
 
-# Initialize the appropriate LLM client based on mode
+# LLM-Client initialisieren
 if USE_LOCAL_MODEL:
-    # Using local LLaMA 3.2 model via Ollama
+    # Lokales LLaMA-Modell über Ollama
     local_client = LocalLLMClient(model_name="llama3.2-3b")
 else:
-    # Using OpenAI API (make sure API key is set)
-    import openai
-    openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY") or st.secrets["openai"]["OPENAI_API_KEY"])
+    # OpenAI-Modus (API-Key wird via config gesetzt)
+    pass  # Keine spezielle Initialisierung notwendig
 
-# Define available tools for the assistant (for OpenAI function calling)
-TOOLS = [
+# Funktionen (Tools) für OpenAI Function Calling definieren
+FUNCTIONS = [
     {
-        "type": "function",
-        "function": {
-            "name": "scrape_company_site",
-            "description": "Fetch basic company info (title and meta description) from a company website.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "url": {"type": "string", "description": "The URL of the company homepage."}
-                },
-                "required": ["url"]
-            }
+        "name": "scrape_company_site",
+        "description": "Fetch basic company info (title and meta description) from a company website.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "url": {"type": "string", "description": "The URL of the company homepage."}
+            },
+            "required": ["url"]
         }
     },
     {
-        "type": "function",
-        "function": {
-            "name": "extract_text_from_file",
-            "description": "Extract readable text from an uploaded job-ad file (PDF, DOCX, or TXT).",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "file_content": {"type": "string", "description": "Base64-encoded file content."},
-                    "filename":    {"type": "string", "description": "Original filename with extension."}
-                },
-                "required": ["file_content", "filename"]
-            }
+        "name": "extract_text_from_file",
+        "description": "Extract readable text from an uploaded job-ad file (PDF, DOCX, or TXT).",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_content": {"type": "string", "description": "Base64-encoded file content."},
+                "filename":    {"type": "string", "description": "Original filename with extension."}
+            },
+            "required": ["file_content", "filename"]
         }
     }
-    # (Note: In OpenAI’s Python SDK, we could pass actual function objects via function_call,
-    # but here we define the schema explicitly for clarity.)
 ]
 
-# System role prompt defining the assistant’s identity and primary task
+# System-Rollen-Nachricht für den Assistant
 SYSTEM_MESSAGE = (
     "You are Vacalyser, an AI assistant for recruiters. "
     "Your job is to extract detailed, structured job vacancy information from input text (job ads) or websites. "
     "Return the information as JSON that matches the schema of the JobSpec model, with no extra commentary."
 )
 
-def auto_fill_job_spec(input_url: str = "", file_bytes: bytes = None, file_name: str = "", 
+def auto_fill_job_spec(input_url: str = "", file_bytes: bytes = None, file_name: str = "",
                        summary_quality: str = "standard") -> Dict[str, Any]:
     """
-    Analyze a job description from a URL or file and return extracted fields as a dict.
-    - input_url: URL of a job advertisement webpage (if provided).
-    - file_bytes: Raw bytes of an uploaded job description file.
-    - file_name: Filename of the uploaded file.
-    - summary_quality: {"economy", "standard", "high"} – how much to compress the content if it's large.
+    Analysiert eine Stellenanzeige von einer URL oder Datei und gibt die extrahierten Felder als Dict zurück.
+    - input_url: URL einer Stellenanzeige (falls angegeben).
+    - file_bytes: Rohbytes einer hochgeladenen Stellenbeschreibung.
+    - file_name: Dateiname der hochgeladenen Datei.
+    - summary_quality: {'economy', 'standard', 'high'} – bei sehr langen Texten wie stark zusammengefasst werden soll.
     """
-    # Validate input
+    # Eingabe validieren
     if not input_url and not file_bytes:
-        raise ValueError("auto_fill_job_spec requires either a URL or a file input.")
+        raise ValueError("auto_fill_job_spec erfordert entweder eine URL oder eine Datei als Eingabe.")
     if input_url and file_bytes:
-        # If both URL and file are provided, prioritize URL and ignore file to avoid confusion
+        # Bei beiden Eingaben: URL priorisieren, Datei ignorieren
         file_bytes = None
         file_name = ""
 
-    # Prepare user message for the LLM
+    # Nutzeranweisung (Prompt) für das LLM vorbereiten
     user_message = ""
     if input_url:
         user_message += f"The job ad is located at this URL: {input_url}\n"
@@ -161,114 +149,150 @@ def auto_fill_job_spec(input_url: str = "", file_bytes: bytes = None, file_name:
         user_message += "A job ad file is provided. Please analyze its contents carefully.\n"
     user_message += "Extract all relevant job information and return it in JSON format matching the JobSpec schema."
 
-    # If the input text is very long, consider summarizing to conserve token context for the model
+    # Falls der Dateitext sehr lang ist: vorab zusammenfassen, um Tokens zu sparen
     if file_bytes and file_name:
         try:
             text_length = len(file_bytes)
         except Exception:
             text_length = 0
-        # If file >100KB, summarize content depending on quality setting
         if text_length > 100_000:  # ~100 KB
-            extracted_text = extract_text_from_file(file_content=file_bytes.decode('utf-8', errors='ignore'), 
-                                                   filename=file_name)
+            from src.tools.file_tools import extract_text_from_file
+            from src.utils.summarize import summarize_text
+            extracted_text = extract_text_from_file(file_bytes, file_name)
             if isinstance(extracted_text, str) and len(extracted_text) > 5000:
                 summary = summarize_text(extracted_text, quality=summary_quality)
-                # Instruct the assistant to use the summary instead of full text
+                # Anweisung an Assistant zur Verwendung der Zusammenfassung anpassen
                 user_message = (
                     "The job ad text was summarized due to length. "
                     "Please extract job info from the following summary:\n"
                     f"{summary}\nReturn the info as JSON per JobSpec."
                 )
-    # If using local model, we can't rely on function calling – handle URL content upfront
+
+    # Bei lokalem Modell: HTML-Inhalt vorab holen, da kein Function Calling verfügbar
     if USE_LOCAL_MODEL:
         if input_url:
             try:
+                from src.tools.scraping_tools import scrape_company_site
                 site_info = scrape_company_site(url=input_url)
-                # Append site info (title/description) to assist the local model
-                if site_info.get("title") or site_info.get("description"):
-                    user_message += "\n"
-                    user_message += f"(Website summary: {site_info.get('title','')}: {site_info.get('description','')})"
+                if isinstance(site_info, dict) and (site_info.get("title") or site_info.get("description")):
+                    user_message += "\n(Website summary: " + (site_info.get("title", "") or "") + ": " + (site_info.get("description", "") or "") + ")"
             except Exception as e:
-                logging.warning(f"Website scraping failed: {e}")
+                logger.warning(f"Website-Scraping fehlgeschlagen: {e}")
 
-    # Call the appropriate LLM (local or OpenAI) to get the job spec JSON
+    # LLM-Aufruf durchführen (unterschieden nach Modus)
+    content = ""
     if USE_LOCAL_MODEL:
-        # Local LLM mode
+        # Lokales LLM direkt mit zusammengesetztem Prompt nutzen
         try:
-            response_text = local_client.generate(text=user_message, system=SYSTEM_MESSAGE)
+            content = local_client.generate(text=user_message, system=SYSTEM_MESSAGE)
         except Exception as e:
-            logging.error(f"Local model generation failed: {e}")
+            logger.error(f"Lokale LLM-Generierung fehlgeschlagen: {e}")
             return {}
-        content = response_text
     else:
-        # OpenAI API mode
+        # OpenAI API mit Function Calling
+        messages = [
+            {"role": "system", "content": SYSTEM_MESSAGE},
+            {"role": "user", "content": user_message}
+        ]
         try:
-            response = openai_client.chat.completions.create(
-                model="gpt-4-0613",  # GPT-4 with function calling support
-                messages=[
-                    {"role": "system", "content": SYSTEM_MESSAGE},
-                    {"role": "user", "content": user_message}
-                ],
-                tools=TOOLS,
-                tool_choice="auto",
+            response = openai.ChatCompletion.create(
+                model=config.OPENAI_MODEL,
+                messages=messages,
+                functions=FUNCTIONS,
+                function_call="auto",
                 temperature=0.2,
                 max_tokens=1500
             )
         except Exception as api_error:
-            logging.error(f"OpenAI API error in auto_fill_job_spec: {api_error}")
+            logger.error(f"OpenAI API Fehler in auto_fill_job_spec: {api_error}")
             return {}
-        # Extract the assistant's message (after any function calls)
-        try:
-            content = response.choices[0].message.content
-        except Exception as e:
-            logging.error(f"Unexpected response structure: {e}")
-            return {}
-        if not content:
-            # Handle case where assistant used tools but gave no final message
-            content = ""
-            if hasattr(response, "choices") and response.choices:
-                try:
-                    # Try to capture any tool call results (if present)
-                    tool_calls = response.choices[0].finish_reason
-                except Exception:
-                    tool_calls = None
-                content = str(tool_calls) or ""
-            if not content:
+        first_message = response.choices[0].message
+        if hasattr(first_message, "function_call") and first_message.function_call:
+            # Wenn das LLM eine Tool-Funktion aufruft, diese ausführen
+            func_name = first_message.function_call.name
+            func_args = {}
+            try:
+                func_args = json.loads(first_message.function_call.arguments or "{}")
+            except Exception:
+                pass
+            func_result = ""
+            try:
+                if func_name == "scrape_company_site":
+                    from src.tools.scraping_tools import scrape_company_site
+                    result_data = scrape_company_site(**func_args)
+                    if isinstance(result_data, dict):
+                        func_result = ((result_data.get("title") or "") + "\n" + (result_data.get("description") or "")).strip()
+                    else:
+                        func_result = str(result_data)
+                elif func_name == "extract_text_from_file":
+                    from src.tools.file_tools import extract_text_from_file
+                    import base64
+                    file_content_str = func_args.get("file_content", "")
+                    filename = func_args.get("filename", "")
+                    try:
+                        file_bytes_input = base64.b64decode(file_content_str)
+                    except Exception:
+                        file_bytes_input = file_content_str.encode("utf-8", "ignore")
+                    func_result = extract_text_from_file(file_bytes_input, filename) or ""
+                    if not isinstance(func_result, str):
+                        func_result = str(func_result)
+            except Exception as e:
+                logger.error(f"Fehler bei Tool-Ausführung {func_name}: {e}")
+            # Ergebnis der Funktion als Assistant-Antwort hinzufügen und zweiten API-Call durchführen
+            messages.append({"role": "function", "name": func_name, "content": func_result})
+            try:
+                second_response = openai.ChatCompletion.create(
+                    model=config.OPENAI_MODEL,
+                    messages=messages,
+                    functions=FUNCTIONS,
+                    function_call="auto",
+                    temperature=0.2,
+                    max_tokens=1500
+                )
+            except Exception as api_error:
+                logger.error(f"OpenAI API Fehler beim zweiten Aufruf: {api_error}")
                 return {}
+            content = second_response.choices[0].message.content or ""
+        else:
+            # Das LLM hat direkt geantwortet (keine Funktion benötigt)
+            content = first_message.content or ""
+        if not content:
+            return {}
 
-    # Now 'content' should be a JSON string representing JobSpec. Validate and parse it.
+    # 'content' sollte nun den JSON-String entsprechend JobSpec enthalten
     content_str = content.strip()
     if content_str.startswith("```"):
-        # Remove Markdown formatting if present
+        # Etwaige Markdown-Formatierung entfernen
         content_str = content_str.strip("``` \n")
     if content_str == "":
         return {}
+    # JSON-String in Pydantic-Modell JobSpec validieren und parsen
     try:
+        from src.models.job_models import JobSpec
         job_spec = JobSpec.model_validate_json(content_str)
     except Exception as e:
-        logging.error(f"Vacalyser assistant returned invalid JSON. Error: {e}")
-        # If JSON invalid, attempt a fix by asking the model to correct its output
-        if not USE_LOCAL_MODEL and openai_client:
+        logger.error(f"Assistant lieferte kein gültiges JSON. Fehler: {e}")
+        if not USE_LOCAL_MODEL:
+            # Versuchen, das LLM sein Format korrigieren zu lassen
             repair_system_msg = "Your previous output was not valid JSON. Only output a valid JSON matching JobSpec now."
             try:
-                repair_resp = openai_client.chat.completions.create(
-                    model="gpt-4-0613",
+                repair_resp = openai.ChatCompletion.create(
+                    model=config.OPENAI_MODEL,
                     messages=[
                         {"role": "system", "content": SYSTEM_MESSAGE},
                         {"role": "user", "content": user_message},
                         {"role": "assistant", "content": content_str},
                         {"role": "system", "content": repair_system_msg}
                     ],
-                    tools=[],
                     temperature=0,
                     max_tokens=1200
                 )
                 content_str = repair_resp.choices[0].message.content.strip()
                 job_spec = JobSpec.model_validate_json(content_str)
             except Exception as e:
-                logging.error(f"Repair attempt failed: {e}")
+                logger.error(f"Reparaturversuch fehlgeschlagen: {e}")
                 return {}
         else:
             return {}
-    # Return the parsed job spec as a dictionary
+    # Als Python-Dictionary zurückgeben
     return job_spec.model_dump()
