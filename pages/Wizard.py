@@ -1,25 +1,55 @@
 from __future__ import annotations
-import streamlit as st
-import requests
-# Vacalyser modules and utilities
-import streamlit as st
-# ─────────────────────────────────────────────────────────────────────────────
-# Vacalyser internal imports
-# ----------------------------------------------------------------------------
-from src.state.session_state import initialize_session_state
-from src.config import keys as cfg_keys  # STEP_KEYS + GENERATED_KEYS
-import src.config as config              # global settings / flags
 
-from src.agents import vacancy_agent
+"""Vacalyser multi‑step wizard page (Streamlit).
+
+All eight steps are now AI‑aided.  Every time a user edits a field,
+the TriggerEngine fires the corresponding GPT‑4–powered suggestion
+processors – fully automatic, no extra buttons required.
+
+This file also normalises the config import situation: the original
+project contains a *root‑level* ``config.py`` (module ``config``) **and** a
+package ``src.config`` that other modules import via
+``from src.config import config``.  We therefore expose the root module
+as attribute ``config`` inside the package and assure backward
+compatibility for the constant name ``USE_LOCAL_MODEL``.
+"""
+
+###############################################################################
+# Imports & one‑time config alias fix                                          #
+###############################################################################
+
+import importlib
+import requests
+import streamlit as st
+
+# ── Config bridge ────────────────────────────────────────────────────────────
+# 1) Import root‑level config.py → module name ``config``
+import config as root_config  # project‑root ``config.py``
+
+# Backwards‑compat: provide alias USE_LOCAL_MODEL expected by legacy code
+if not hasattr(root_config, "USE_LOCAL_MODEL"):
+    root_config.USE_LOCAL_MODEL = getattr(root_config, "USE_LOCAL_MODE", False)
+
+# 2) Ensure ``src.config`` *package* exposes the root module as attribute
+import src.config as cfg_pkg   # package directory src/config/
+cfg_pkg.config = root_config   # so ``from src.config import config`` works
+
+# From here on all downstream imports are safe
+# ─────────────────────────────────────────────────────────────────────────────
+
+from src.state.session_state import initialize_session_state
 from src.logic.trigger_engine import TriggerEngine, build_default_graph
-from src.processors import register_all_processors
+from src import processors
+from src.agents import vacancy_agent
 from src.tools.file_tools import extract_text_from_file, _clean_text as clean_text
 from src.tools.scraping_tools import scrape_company_site
-from src.llm_utils import call_with_retry
 
-# Alias for convenience throughout the file
-STEP_KEYS = cfg_keys.STEP_KEYS
-# 1. Initialize session state for all wizard fields
+STEP_KEYS = importlib.import_module("src.config.keys").STEP_KEYS  # list per step
+
+###############################################################################
+# Session‑state initialisation & TriggerEngine                                #
+###############################################################################
+
 initialize_session_state()
 
 # 2. Set up the TriggerEngine with all dependencies and processors
