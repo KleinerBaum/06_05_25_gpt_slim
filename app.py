@@ -1,5 +1,5 @@
 import streamlit as st
-from pages import wizard  # import the wizard module (8-step recruitment flow)
+from src.pages import wizard
 
 # Set up page configuration (title, icon, layout, etc.)
 st.set_page_config(page_title="RoleCraft Recruitment Wizard",
