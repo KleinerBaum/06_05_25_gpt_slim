@@ -11,11 +11,12 @@ from src.models.job_models import JobSpec  # Pydantic model for job spec
 from src.tools.scraping_tools import scrape_company_site
 from src.tools.file_tools import extract_text_from_file
 from src.utils.summarize import summarize_text
-import openai
-import streamlit as st
++import openai
++import streamlit as st
++import src.config as config
 
 # Set OpenAI API key from Streamlit secrets
-openai.api_key = st.secrets["openai"]["OPENAI_API_KEY"]
+USE_LOCAL_MODEL = config.USE_LOCAL_MODE
 
 # Expose LocalLLMClient for external use
 __all__ = ["LocalLLMClient"]
