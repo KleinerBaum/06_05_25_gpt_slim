@@ -4,7 +4,6 @@ import requests
 # Vacalyser modules and utilities
 from src.state.session_state import initialize_session_state
 from src.logic.trigger_engine import TriggerEngine, build_default_graph
-from src.logic.processors import register_all_processors
 from src.tools.file_tools import extract_text_from_file
 from src.tools.scraping_tools import scrape_company_site
 from src.utils.text_cleanup import clean_text
@@ -12,6 +11,7 @@ from src.config.keys import STEP_KEYS
 from src.agents.vacancy_agent import auto_fill_job_spec
 from src.utils.tool_registry import call_with_retry
 from openai import OpenAI
+from src.utils.llm_utils import call_with_retry
 
 # Initialize all expected session state keys (only runs once per session)
 initialize_session_state()
