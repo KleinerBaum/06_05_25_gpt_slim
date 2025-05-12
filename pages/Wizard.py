@@ -2,19 +2,20 @@ from __future__ import annotations
 import streamlit as st
 import requests
 # Vacalyser modules and utilities
+import streamlit as st
+# Import session state initializer and other needed components
 from src.state.session_state import initialize_session_state
+from src.config import keys  # keys.STEP_KEYS and keys.GENERATED_KEYS
+import src.config as config  # config holds global settings
+from src.agents import vacancy_agent
 from src.logic.trigger_engine import TriggerEngine, build_default_graph
-from src.tools.file_tools import extract_text_from_file
-from src.tools.scraping_tools import scrape_company_site
-from src.utils.text_cleanup import clean_text
-from src.config.keys import STEP_KEYS
-from src.agents.vacancy_agent import auto_fill_job_spec
-from src.utils.tool_registry import call_with_retry
-from openai import OpenAI
-from src.utils.llm_utils import call_with_retry
 
-# Initialize all expected session state keys (only runs once per session)
+# 1. Initialize session state for all wizard fields
 initialize_session_state()
+
+# 2. Set up the TriggerEngine with all dependencies and processors
+engine = TriggerEngine()
+build_default_graph(engine)
 
 def _ensure_engine() -> TriggerEngine:
     """Initialize TriggerEngine with default dependencies and processors (if not already)."""
