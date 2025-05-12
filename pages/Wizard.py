@@ -3,13 +3,22 @@ import streamlit as st
 import requests
 # Vacalyser modules and utilities
 import streamlit as st
-# Import session state initializer and other needed components
+# ─────────────────────────────────────────────────────────────────────────────
+# Vacalyser internal imports
+# ----------------------------------------------------------------------------
 from src.state.session_state import initialize_session_state
-from src.config import keys  # keys.STEP_KEYS and keys.GENERATED_KEYS
-import src.config as config  # config holds global settings
+from src.config import keys as cfg_keys  # STEP_KEYS + GENERATED_KEYS
+import src.config as config              # global settings / flags
+
 from src.agents import vacancy_agent
 from src.logic.trigger_engine import TriggerEngine, build_default_graph
+from src.processors import register_all_processors
+from src.tools.file_tools import extract_text_from_file, _clean_text as clean_text
+from src.tools.scraping_tools import scrape_company_site
+from src.llm_utils import call_with_retry
 
+# Alias for convenience throughout the file
+STEP_KEYS = cfg_keys.STEP_KEYS
 # 1. Initialize session state for all wizard fields
 initialize_session_state()
 
