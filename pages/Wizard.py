@@ -52,48 +52,62 @@ STEP_KEYS = importlib.import_module("src.config.keys").STEP_KEYS  # list per ste
 
 initialize_session_state()
 
-# 2. Set up the TriggerEngine with all dependencies and processors
-engine = TriggerEngine()
-build_default_graph(engine)
+if "trigger_engine" not in st.session_state:
+    engine = TriggerEngine()
+    build_default_graph(engine)
+    processors._SUGGESTION_MODEL = root_config.OPENAI_MODEL  # GPT‑4 only
+    st.session_state["trigger_engine"] = engine
 
-def _ensure_engine() -> TriggerEngine:
-    """Initialize TriggerEngine with default dependencies and processors (if not already)."""
-    eng: TriggerEngine | None = st.session_state.get("trigger_engine")
-    if eng is None:
-        eng = TriggerEngine()
-        build_default_graph(eng)
-        register_all_processors(eng)
-        st.session_state["trigger_engine"] = eng
-    return eng
 
-def _clamp_step() -> int:
-    """Keep wizard_step within 1–8."""
-    st.session_state["wizard_step"] = max(1, min(8, int(st.session_state.get("wizard_step", 1))))
-    return st.session_state["wizard_step"]
+def _te() -> TriggerEngine:
+    """Return the singleton TriggerEngine from session state."""
+    return st.session_state["trigger_engine"]
+
+###############################################################################
+# Small utilities                                                             #
+###############################################################################
+
+def trigger_change(field: str):
+    """Notify TriggerEngine that *field* has changed."""
+    _te().notify_change(field, st.session_state)
+
 
 def fetch_url_text(url: str) -> str:
-    """Fetch content from URL and return cleaned text."""
+    """Download URL and return cleaned text (title/description or raw)."""
     try:
-        resp = requests.get(url, timeout=10)
-        resp.raise_for_status()
+        r = requests.get(url, timeout=10)
+        r.raise_for_status()
     except Exception as exc:
         st.warning(f"Failed to fetch URL: {exc}")
         return ""
-    content_type = resp.headers.get("content-type", "").lower()
-    # If HTML, use scraping tool to get readable text (e.g., page title & description)
-    if "text/html" in content_type:
-        data = scrape_company_site(url)
-        if isinstance(data, dict):
-            text = (data.get("title", "") or "") + "\n" + (data.get("description", "") or "")
-        else:
-            text = str(data)
-    elif "pdf" in content_type:
-        text = extract_text_from_file(resp.content, "file.pdf")
-    elif "officedocument" in content_type or "msword" in content_type:
-        text = extract_text_from_file(resp.content, "file.docx")
-    else:
-        text = resp.text
-    return clean_text(text or "")
+    ctype = r.headers.get("content-type", "").lower()
+    if "text/html" in ctype:
+        info = scrape_company_site(url)
+        if isinstance(info, dict):
+            return clean_text((info.get("title", "") + "\n" + info.get("description", "")).strip())
+    if "pdf" in ctype:
+        return clean_text(extract_text_from_file(r.content, "file.pdf"))
+    if "officedocument" in ctype or "msword" in ctype:
+        return clean_text(extract_text_from_file(r.content, "file.docx"))
+    return clean_text(r.text)
+
+
+def auto_fill_from_sources():
+    """If URL or uploaded file present – run vacancy_agent.auto_fill_job_spec."""
+    url = st.session_state.get("input_url", "")
+    file_obj = st.session_state.get("uploaded_file")
+    file_bytes = file_obj.getvalue() if file_obj else None
+    file_name = file_obj.name if file_obj else ""
+    if not url and not file_bytes:
+        return
+    try:
+        result = vacancy_agent.auto_fill_job_spec(url, file_bytes, file_name)
+    except Exception as e:
+        st.error(f"Auto‑fill failed: {e}")
+        return
+    for k, v in result.items():
+        st.session_state[k] = v
+        trigger_change(k)
 
 def match_and_store_keys(raw_text: str) -> None:
     """Fallback parser: extract fields by matching label patterns in text."""
