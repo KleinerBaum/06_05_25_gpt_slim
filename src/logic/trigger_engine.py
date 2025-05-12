@@ -1,41 +1,23 @@
 # src/logic/trigger_engine.py
 
-"""
-Trigger-Engine
-==============
-Pure-Python, Streamlit-agnostic dependency engine used by Vacalyser.
-
-An edge A → B means: whenever field A changes, recompute B.
-Processor callbacks receive state (normally st.session_state) so they can
-read & mutate wizard values.
-
-Typical usage:
->>> from logic.trigger_engine import TriggerEngine, build_default_graph
->>> engine = TriggerEngine()
->>> build_default_graph(engine)
->>> engine.register_processor("salary_range", update_salary_range)
->>> engine.notify_change("task_list", st.session_state)
-"""
 from __future__ import annotations
-from typing import Callable, Dict, Iterable, Set
+from typing import Callable, Iterable, Set
 import networkx as nx
 
 __all__ = ["TriggerEngine", "build_default_graph"]
 
-# Core engine
 class TriggerEngine:
-    """DAG of field-dependencies + processor registry."""
+    """DAG zur Verwaltung von Feldabhängigkeiten und zugehörigen Verarbeitungsfunktionen."""
     def __init__(self) -> None:
         self.graph: nx.DiGraph = nx.DiGraph()
-        self._processors: Dict[str, Callable[[dict], None]] = {}
+        self._processors: dict[str, Callable[[dict], None]] = {}
 
-    # Graph construction
     def register_node(self, key: str) -> None:
         if key not in self.graph:
             self.graph.add_node(key)
 
     def register_dependency(self, source: str, target: str) -> None:
-        """Declare target depends on source (edge source→target)."""
+        """Deklariert, dass *target* von *source* abhängt (Kante source→target)."""
         self.register_node(source)
         self.register_node(target)
         self.graph.add_edge(source, target)
@@ -44,49 +26,62 @@ class TriggerEngine:
         for src, tgt in pairs:
             self.register_dependency(src, tgt)
 
-    # Processors API
     def register_processor(self, key: str, func: Callable[[dict], None]) -> None:
-        """Attach callback that refreshes *key* whenever dependencies change."""
+        """Registriert eine Verarbeitungsfunktion, die ausgeführt wird, wenn *key* neu berechnet werden muss."""
         self._processors[key] = func
 
-    # Run-time execution
     def notify_change(self, updated_key: str, state: dict) -> None:
-        """Call all processors downstream of updated_key (depth-first)."""
+        """Benachrichtigt die Engine, dass sich *updated_key* geändert hat, und führt alle abhängigen Verarbeiter aus."""
         if updated_key not in self.graph:
-            return  # nothing depends on it
+            return
         affected: Set[str] = nx.descendants(self.graph, updated_key)
         for node in affected:
             processor = self._processors.get(node)
             if processor:
                 processor(state)
 
-# Default dependency map (wizard v0 – refined reasoning hooks)
+# Definierte Abhängigkeiten zwischen den Wizard-Feldern
 _DEPENDENCY_PAIRS: list[tuple[str, str]] = [
-    # 1. Tasks → Salary Range (job complexity affects salary)
+    # Wenn Jobtitel/Firmendaten geändert -> Aufgaben & Skills aktualisieren
+    ("job_title", "task_list"),
+    ("job_title", "must_have_skills"),
+    ("job_title", "commission_structure"),
+    ("job_level", "bonus_scheme"),
+    # Aufgaben/Muss-Fähigkeiten ändern -> Gehaltsspanne aktualisieren
     ("task_list", "salary_range"),
-    # 2. Must-Have Skills → Salary Range (skill rarity affects salary)
     ("must_have_skills", "salary_range"),
-    # 5. Remote Policy → Publication Channels
+    ("must_have_skills", "nice_to_have_skills"),
+    # Remote-Policy ändern -> empfohlene Publikationskanäle aktualisieren
     ("remote_work_policy", "desired_publication_channels"),
-    # 6. Role Keywords → SEO Keywords (auxiliary field)
-    ("role_keywords", "seo_keywords"),
-    # 7. Industry Experience → Task Suggestions (future enhancement)
+    # Branchen-Erfahrung ändern -> Aufgabenliste aktualisieren
     ("industry_experience", "task_list"),
-    # 8. Team Structure → Reports To & Supervises
-    ("team_structure", "reports_to"),
-    ("team_structure", "supervises"),
-    # 9. Tool Proficiency → Technical Tasks (future enhancement)
-    ("tool_proficiency", "technical_tasks"),
-    # 11. Parsed Data (raw) → Salary Range (if placeholder “competitive”, refine it)
-    ("parsed_data_raw", "salary_range"),
-    # 13. Soft Skills → Interview Questions (populate auxiliary suggestions)
-    ("soft_skills", "interview_questions"),
-    # 17. Language Requirements → Translation Required (flag if non-local language)
-    ("language_requirements", "translation_required"),
-    # 18. Company-Candidate distance → Relocation Assistance (if far, suggest relocation help)
-    ("company_location_distance", "relocation_assistance"),
+    # Rohtext geändert (z.B. aus Datei-Analyse) -> Gehaltsspanne verfeinern (wenn 'competitive')
+    ("parsed_data_raw", "salary_range")
 ]
 
 def build_default_graph(engine: TriggerEngine) -> None:
-    """Populate the engine with the canonical Vacalyser dependency graph."""
+    """Befüllt die TriggerEngine mit dem Abhängigkeitsgraphen und registriert die Verarbeitungsfunktionen."""
     engine.register_dependencies(_DEPENDENCY_PAIRS)
+    # Importiere Verarbeitungsfunktionen aus Prozessor-Modulen
+    from src.processors import salary, publication
+    from src.processors.salary import update_salary_range
+    from src.processors.publication import update_publication_channels
+    # Weitere Funktionen (Aufgaben, Skills, Benefits) importieren
+    try:
+        from src.processors import update_task_list, update_must_have_skills, update_nice_to_have_skills, update_bonus_scheme, update_commission_structure
+    except ImportError:
+        # Falls in Untermodule aufgeteilt:
+        from src.processors import tasks, skills, benefits
+        update_task_list = tasks.update_task_list
+        update_must_have_skills = skills.update_must_have_skills
+        update_nice_to_have_skills = skills.update_nice_to_have_skills
+        update_bonus_scheme = benefits.update_bonus_scheme
+        update_commission_structure = benefits.update_commission_structure
+    # Funktionen mit ihren Ziel-Feldern verknüpfen
+    engine.register_processor("task_list", update_task_list)
+    engine.register_processor("must_have_skills", update_must_have_skills)
+    engine.register_processor("nice_to_have_skills", update_nice_to_have_skills)
+    engine.register_processor("salary_range", update_salary_range)
+    engine.register_processor("desired_publication_channels", update_publication_channels)
+    engine.register_processor("bonus_scheme", update_bonus_scheme)
+    engine.register_processor("commission_structure", update_commission_structure)
