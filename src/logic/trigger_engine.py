@@ -1,5 +1,3 @@
-# src/logic/trigger_engine.py
-
 from __future__ import annotations
 from typing import Callable, Iterable, Set
 import networkx as nx

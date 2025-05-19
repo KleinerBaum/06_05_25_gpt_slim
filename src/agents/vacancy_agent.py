@@ -1,5 +1,3 @@
-# src/agents/vacancy_agent.py
-
 from __future__ import annotations
 import os
 import json

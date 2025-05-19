@@ -1,5 +1,3 @@
-# src/processors/salary.py
-
 from __future__ import annotations
 import logging
 from typing import Any

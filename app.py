@@ -1,5 +1,5 @@
 import streamlit as st
-from pages import Wizard
+from pages import wizard
 from src.utils.llm_utils import call_with_retry, USE_LOCAL_MODEL, local_client
 
 # Set up page configuration (title, icon, layout, etc.)
