@@ -72,8 +72,19 @@ def get_role_skills(job_title: str, num_skills: int = 15) -> List[str]:
     return skills_list
 
 # Wrapper-Funktion mit automatischen Wiederholungen für OpenAI-Aufrufe
-@retry(reraise=True, stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=4),
-       retry=retry_if_exception_type((openai.error.APIConnectionError, openai.error.Timeout, openai.error.RateLimitError, openai.error.APIError)))
+@retry(
+    reraise=True,
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(min=1, max=4),
+    retry=retry_if_exception_type(
+        (
+            openai.APIConnectionError,
+            openai.APITimeoutError,
+            openai.RateLimitError,
+            openai.APIError,
+        )
+    ),
+)
 def _call_with_retry(func, *args, **kwargs):
     return func(*args, **kwargs)
 
