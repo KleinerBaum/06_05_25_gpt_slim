@@ -31,6 +31,8 @@ from typing import Literal
 import fitz  # PyMuPDF
 from docx import Document
 
+from src.utils.text_cleanup import clean_text
+
 # Optionaler Decorator (funktioniert auch ohne tool_registry)
 try:
     from src.utils.tool_registry import tool
@@ -87,15 +89,6 @@ def _extract_text_zip_plain(data: bytes) -> str | None:
     return None
 
 
-def _clean_text(text: str) -> str:
-    """Normiert Leerzeichen, Zeilenumbrüche und entfernt Steuerzeichen."""
-    text = text.replace("\r\n", "\n").replace("\r", "\n")
-    text = re.sub(r"[ \t]+", " ", text)                # Mehrfach-Spaces
-    text = re.sub(r"\n{3,}", "\n\n", text)              # >2 Zeilenumbrüche
-    text = re.sub(r"[^\x09\x0A\x0D\x20-\x7E\u00A0-\uFFFF]+", "", text)  # non-printables
-    return text.strip()
-
-
 # --- öffentliches Tool -------------------------------------------------------
 
 @tool(
@@ -144,7 +137,7 @@ def extract_text_from_file(
             text = file_content.decode("utf-8", errors="ignore")
             if not text.strip():  # Fallback Latin-1
                 text = file_content.decode("latin-1", errors="ignore")
-        return _clean_text(text)
+        return clean_text(text)
     except Exception as err:
         logger.error("extract_text_from_file() failed: %s", err, exc_info=True)
         return ""
