@@ -1,4 +1,6 @@
-import os, logging, openai
+import os
+import logging
+import openai
 
 class OpenAIModel:
     def __init__(self):

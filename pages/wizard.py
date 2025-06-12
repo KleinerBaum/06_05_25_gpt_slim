@@ -441,14 +441,28 @@ def render_step8():
     st.title("Schritt 8: Weitere Angaben & Zusammenfassung" if lang == "Deutsch" else "Step 8: Additional Information & Summary")
     display_step_summary(8)
     st.subheader("Abschließende Einstellungen" if lang == "Deutsch" else "Final Settings")
-    ad_seniority_tone = st.text_input("Ton/Stil der Anzeige" if lang == "Deutsch" else "Ad Tone/Style",
-                                      value=st.session_state.get("ad_seniority_tone", ""),
-                                      placeholder="z.B. Professionell und förmlich" if lang == "Deutsch" else "e.g. Professional and formal",
-                                      help="Gewünschter Tonfall/Schreibstil der Anzeige (z.B. locker, formell)." if lang == "Deutsch" else "Desired tone or style for the job ad (e.g. formal, casual, friendly).")
-    ad_length_preference = st.text_input("Präferenz der Anzeigentextlänge" if lang == "Deutsch" else "Ad Length Preference",
-                                         value=st.session_state.get("ad_length_preference", ""),
-                                         placeholder="z.B. Kurz und prägnant" if lang == "Deutsch" else "e.g. Short and concise",
-                                         help="Präferenz für die Länge der Stellenbeschreibung (knapp vs. ausführlich)." if lang == "Deutsch" else "Preference for the length/detail level of the job description (concise vs. detailed).")
+    ad_seniority_tone = st.text_input(
+        "Ton/Stil der Anzeige" if lang == "Deutsch" else "Ad Tone/Style",
+        value=st.session_state.get("ad_seniority_tone", ""),
+        placeholder="z.B. Professionell und förmlich" if lang == "Deutsch" else "e.g. Professional and formal",
+        help=(
+            "Gewünschter Tonfall/Schreibstil der Anzeige (z.B. locker, formell)."
+            if lang == "Deutsch"
+            else "Desired tone or style for the job ad (e.g. formal, casual, friendly)."
+        ),
+    )
+    st.session_state["ad_seniority_tone"] = ad_seniority_tone
+    ad_length_preference = st.text_input(
+        "Präferenz der Anzeigentextlänge" if lang == "Deutsch" else "Ad Length Preference",
+        value=st.session_state.get("ad_length_preference", ""),
+        placeholder="z.B. Kurz und prägnant" if lang == "Deutsch" else "e.g. Short and concise",
+        help=(
+            "Präferenz für die Länge der Stellenbeschreibung (knapp vs. ausführlich)."
+            if lang == "Deutsch"
+            else "Preference for the length/detail level of the job description (concise vs. detailed)."
+        ),
+    )
+    st.session_state["ad_length_preference"] = ad_length_preference
     # Sprache der finalen Anzeige auswählen (Deutsch/Englisch)
     language_options = ["Deutsch", "Englisch"] if lang == "Deutsch" else ["German", "English"]
     default_idx = 0 if st.session_state.get("language_of_ad", "English") in ["German", "Deutsch"] else 1
@@ -458,38 +472,76 @@ def render_step8():
     translation_required = st.checkbox("Übersetzung der Anzeige benötigt?" if lang == "Deutsch" else "Translation required?",
                                        value=bool(st.session_state.get("translation_required", False)))
     st.session_state["translation_required"] = translation_required
-    desired_publication_channels = st.text_input("Gewünschte Veröffentlichungskanäle" if lang == "Deutsch" else "Desired Publication Channels",
-                                                 value=st.session_state.get("desired_publication_channels", ""),
-                                                 placeholder="z.B. LinkedIn, Firmenwebsite" if lang == "Deutsch" else "e.g. LinkedIn, Company careers page",
-                                                 help="Kanäle/Plattformen, auf denen die Stelle veröffentlicht werden soll." if lang == "Deutsch" else "Channels where the job ad will be posted (job boards, company site, etc).")
-    employer_branding_elements = st.text_input("Employer-Branding-Elemente" if lang == "Deutsch" else "Employer Branding Elements",
-                                               value=st.session_state.get("employer_branding_elements", ""),
-                                               placeholder="z.B. Unternehmensmission, Werte" if lang == "Deutsch" else "e.g. Company mission statement, core values",
-                                               help="Besondere Merkmale der Arbeitgebermarke (Mission, Werte, Slogan, etc.)." if lang == "Deutsch" else "Company branding elements to include (mission, values, tagline, etc.).")
-    diversity_inclusion_statement = st.text_area("Diversity & Inclusion Statement",
-                                                  value=st.session_state.get("diversity_inclusion_statement", ""),
-                                                  placeholder="Optionale Passage zu Diversität und Inklusion" if lang == "Deutsch" else "Optional statement on diversity and inclusion")
-    legal_disclaimers = st.text_area("Rechtliche Hinweise" if lang == "Deutsch" else "Legal Disclaimers",
-                                     value=st.session_state.get("legal_disclaimers", ""),
-                                     placeholder="Rechtliche Hinweise oder Disclaimer" if lang == "Deutsch" else "Any legal disclaimers or notices")
-    company_awards = st.text_input("Auszeichnungen des Unternehmens" if lang == "Deutsch" else "Company Awards",
-                                   value=st.session_state.get("company_awards", ""),
-                                   placeholder="z.B. Top-Arbeitgeber 2023" if lang == "Deutsch" else "e.g. Best Employer 2023")
-    social_media_links = st.text_input("Social-Media-Links",
-                                       value=st.session_state.get("social_media_links", ""),
-                                       placeholder="z.B. LinkedIn, XING, Twitter" if lang == "Deutsch" else "e.g. LinkedIn, Twitter profiles")
-    video_introduction_option = st.text_input("Option für Videoeinleitung" if lang == "Deutsch" else "Video Introduction Option",
-                                              value=st.session_state.get("video_introduction_option", ""),
-                                              placeholder="z.B. Link zu einem Company-Video" if lang == "Deutsch" else "e.g. Link to a company introduction video")
-    internal_job_id = st.text_input("Interne Job-ID",
-                                    value=st.session_state.get("internal_job_id", ""),
-                                    placeholder="Interne Referenznummer der Stelle")
-    deadline_urgency = st.text_input("Bewerbungsfrist/Dringlichkeit" if lang == "Deutsch" else "Application Deadline/Urgency",
-                                     value=st.session_state.get("deadline_urgency", ""),
-                                     placeholder="z.B. Einstellung bis Q4 angepeilt" if lang == "Deutsch" else "e.g. Target to hire by Q4")
-    comments_internal = st.text_area("Interne Kommentare" if lang == "Deutsch" else "Internal Comments",
-                                     value=st.session_state.get("comments_internal", ""),
-                                     placeholder="Nur intern: Notizen oder Kommentare zum Profil")
+    desired_publication_channels = st.text_input(
+        "Gewünschte Veröffentlichungskanäle" if lang == "Deutsch" else "Desired Publication Channels",
+        value=st.session_state.get("desired_publication_channels", ""),
+        placeholder="z.B. LinkedIn, Firmenwebsite" if lang == "Deutsch" else "e.g. LinkedIn, Company careers page",
+        help=(
+            "Kanäle/Plattformen, auf denen die Stelle veröffentlicht werden soll."
+            if lang == "Deutsch"
+            else "Channels where the job ad will be posted (job boards, company site, etc)."
+        ),
+    )
+    st.session_state["desired_publication_channels"] = desired_publication_channels
+    employer_branding_elements = st.text_input(
+        "Employer-Branding-Elemente" if lang == "Deutsch" else "Employer Branding Elements",
+        value=st.session_state.get("employer_branding_elements", ""),
+        placeholder="z.B. Unternehmensmission, Werte" if lang == "Deutsch" else "e.g. Company mission statement, core values",
+        help=(
+            "Besondere Merkmale der Arbeitgebermarke (Mission, Werte, Slogan, etc.)."
+            if lang == "Deutsch"
+            else "Company branding elements to include (mission, values, tagline, etc.)."
+        ),
+    )
+    st.session_state["employer_branding_elements"] = employer_branding_elements
+    diversity_inclusion_statement = st.text_area(
+        "Diversity & Inclusion Statement",
+        value=st.session_state.get("diversity_inclusion_statement", ""),
+        placeholder="Optionale Passage zu Diversität und Inklusion" if lang == "Deutsch" else "Optional statement on diversity and inclusion",
+    )
+    st.session_state["diversity_inclusion_statement"] = diversity_inclusion_statement
+    legal_disclaimers = st.text_area(
+        "Rechtliche Hinweise" if lang == "Deutsch" else "Legal Disclaimers",
+        value=st.session_state.get("legal_disclaimers", ""),
+        placeholder="Rechtliche Hinweise oder Disclaimer" if lang == "Deutsch" else "Any legal disclaimers or notices",
+    )
+    st.session_state["legal_disclaimers"] = legal_disclaimers
+    company_awards = st.text_input(
+        "Auszeichnungen des Unternehmens" if lang == "Deutsch" else "Company Awards",
+        value=st.session_state.get("company_awards", ""),
+        placeholder="z.B. Top-Arbeitgeber 2023" if lang == "Deutsch" else "e.g. Best Employer 2023",
+    )
+    st.session_state["company_awards"] = company_awards
+    social_media_links = st.text_input(
+        "Social-Media-Links",
+        value=st.session_state.get("social_media_links", ""),
+        placeholder="z.B. LinkedIn, XING, Twitter" if lang == "Deutsch" else "e.g. LinkedIn, Twitter profiles",
+    )
+    st.session_state["social_media_links"] = social_media_links
+    video_introduction_option = st.text_input(
+        "Option für Videoeinleitung" if lang == "Deutsch" else "Video Introduction Option",
+        value=st.session_state.get("video_introduction_option", ""),
+        placeholder="z.B. Link zu einem Company-Video" if lang == "Deutsch" else "e.g. Link to a company introduction video",
+    )
+    st.session_state["video_introduction_option"] = video_introduction_option
+    internal_job_id = st.text_input(
+        "Interne Job-ID",
+        value=st.session_state.get("internal_job_id", ""),
+        placeholder="Interne Referenznummer der Stelle",
+    )
+    st.session_state["internal_job_id"] = internal_job_id
+    deadline_urgency = st.text_input(
+        "Bewerbungsfrist/Dringlichkeit" if lang == "Deutsch" else "Application Deadline/Urgency",
+        value=st.session_state.get("deadline_urgency", ""),
+        placeholder="z.B. Einstellung bis Q4 angepeilt" if lang == "Deutsch" else "e.g. Target to hire by Q4",
+    )
+    st.session_state["deadline_urgency"] = deadline_urgency
+    comments_internal = st.text_area(
+        "Interne Kommentare" if lang == "Deutsch" else "Internal Comments",
+        value=st.session_state.get("comments_internal", ""),
+        placeholder="Nur intern: Notizen oder Kommentare zum Profil",
+    )
+    st.session_state["comments_internal"] = comments_internal
     st.success("🎉 Alle Schritte abgeschlossen! Überprüfe die Angaben und erstelle nun die Stellenanzeige." if lang == "Deutsch" else "🎉 All steps completed! Review all inputs and proceed to generate the job description.")
 
 def run_wizard():

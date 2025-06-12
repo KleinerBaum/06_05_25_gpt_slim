@@ -61,7 +61,6 @@ def build_default_graph(engine: TriggerEngine) -> None:
     """Befüllt die TriggerEngine mit dem Abhängigkeitsgraphen und registriert die Verarbeitungsfunktionen."""
     engine.register_dependencies(_DEPENDENCY_PAIRS)
     # Importiere Verarbeitungsfunktionen aus Prozessor-Modulen
-    from src.processors import salary, publication
     from src.processors.salary import update_salary_range
     from src.processors.publication import update_publication_channels
     # Weitere Funktionen (Aufgaben, Skills, Benefits) importieren
