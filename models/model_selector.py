@@ -1,5 +1,8 @@
-from models.openai_model import OpenAIModel
-from models.local_model import LocalLLM
+"""Utility to obtain the OpenAI model instance used across the app."""
 
-def get_model(use_openai: bool = False):
-    return OpenAIModel() if use_openai else LocalLLM()
+from models.openai_model import OpenAIModel
+
+
+def get_model() -> OpenAIModel:
+    """Return the default OpenAI model."""
+    return OpenAIModel()
