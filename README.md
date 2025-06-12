@@ -12,6 +12,15 @@ Set these variables in a `.env` file or your deployment environment. Read them i
 - `DEFAULT_MODEL` – model name used by the provider (e.g. `gpt-4o`).
 - `VECTOR_STORE_PATH` – path to the vector database directory.
 
+| Variable | Example | Purpose |
+| --- | --- | --- |
+| STREAMLIT_ENV | development | environment switch |
+| LANGUAGE | en | default UI language |
+| MODEL_PROVIDER | openai | LLM backend |
+| DEFAULT_MODEL | gpt-4o | base model name |
+| VECTOR_STORE_PATH | ./vector_store | path to vector DB |
+
+
 ## Secrets
 
 Sensitive values must never be committed. Use `secrets.toml` (for Streamlit) or your cloud secret manager for:
