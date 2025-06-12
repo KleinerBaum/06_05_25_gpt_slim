@@ -631,5 +631,3 @@ def _nav(step: int):
         st.button("Zurück" if lang == "Deutsch" else "Back",
                   on_click=lambda: st.session_state.update({"wizard_step": step - 1}), key=f"back_{step}")
 
-# Wizard UI ausführen
-run_wizard()
