@@ -1,5 +1,5 @@
 import streamlit as st
-from pages import wizard
+import wizard
 import base64
 
 # Set up page configuration (title, icon, layout, etc.)
