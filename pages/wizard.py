@@ -1,6 +1,7 @@
 from __future__ import annotations
 import streamlit as st
 import requests
+from streamlit_sortables import sort_items
 
 # Vacalyser-Module und Utilities importieren
 from src.state.session_state import initialize_session_state
@@ -329,14 +330,45 @@ def render_step4_static():
 
 def render_step5_static():
     lang = st.session_state.get("lang", "English")
-    st.title("Schritt 5: Fähigkeiten & Kompetenzen" if lang == "Deutsch" else "Step 5: Skills & Competencies")
+    st.title(
+        "Schritt 5: Fähigkeiten & Kompetenzen" if lang == "Deutsch" else "Step 5: Skills & Competencies"
+    )
     display_step_summary(5)
-    must_have_skills = st.text_area("Muss-Anforderungen" if lang == "Deutsch" else "Must-Have Skills",
-                                     value=st.session_state.get("must_have_skills", ""),
-                                     placeholder="Unverzichtbare Fähigkeiten oder Qualifikationen." if lang == "Deutsch" else "Essential skills or qualifications required.")
-    nice_to_have_skills = st.text_area("Wünschenswerte Zusatz-Skills" if lang == "Deutsch" else "Nice-to-Have Skills",
-                                       value=st.session_state.get("nice_to_have_skills", ""),
-                                       placeholder="Weitere nützliche, aber nicht zwingende Fähigkeiten." if lang == "Deutsch" else "Additional beneficial skills (not mandatory).")
+
+    st.write(
+        "Ziehe deine eingegebenen Fähigkeiten einfach zwischen die Spalten" if lang == "Deutsch" else "Drag your skills between the columns below."
+    )
+
+    new_skill = st.text_input(
+        "Neuen Skill hinzufügen" if lang == "Deutsch" else "Add new skill",
+        key="skill_input",
+    )
+    add_to_must = st.checkbox(
+        "Zu Muss" if lang == "Deutsch" else "To Must-Have",
+        value=True,
+        key="add_to_must",
+    )
+    if st.button("Skill speichern" if lang == "Deutsch" else "Save skill") and new_skill:
+        target = "must_have_skills_list" if add_to_must else "nice_to_have_skills_list"
+        st.session_state.setdefault(target, []).append(new_skill)
+        st.session_state["skill_input"] = ""
+
+    must_list = st.session_state.get("must_have_skills_list", [])
+    nice_list = st.session_state.get("nice_to_have_skills_list", [])
+
+    sorted_lists = sort_items(
+        [
+            {"header": "Muss" if lang == "Deutsch" else "Must-Have", "items": must_list},
+            {"header": "Nice-to-Have", "items": nice_list},
+        ],
+        multi_containers=True,
+    )
+
+    st.session_state["must_have_skills_list"] = sorted_lists[0]["items"]
+    st.session_state["nice_to_have_skills_list"] = sorted_lists[1]["items"]
+
+    must_have_skills = "\n".join(st.session_state["must_have_skills_list"])
+    nice_to_have_skills = "\n".join(st.session_state["nice_to_have_skills_list"])
     certifications_required = st.text_input("Erforderliche Zertifikate" if lang == "Deutsch" else "Certifications Required",
                                             value=st.session_state.get("certifications_required", ""),
                                             placeholder="z.B. PMP, CFA" if lang == "Deutsch" else "e.g. PMP, CFA")
@@ -369,25 +401,39 @@ def render_step6_static():
     commission_structure = st.text_input("Provisionsmodell" if lang == "Deutsch" else "Commission Structure",
                                          value=st.session_state.get("commission_structure", ""),
                                          placeholder="z.B. Umsatzabhängige Provision" if lang == "Deutsch" else "e.g. Commission based on sales performance")
-    vacation_days = st.text_input("Urlaubstage" if lang == "Deutsch" else "Vacation Days",
-                                  value=st.session_state.get("vacation_days", ""),
-                                  placeholder="z.B. 30" if lang == "Deutsch" else "e.g. 25")
-    remote_work_policy = st.text_input("Remote-Arbeit Regelung" if lang == "Deutsch" else "Remote Work Policy",
-                                       value=st.session_state.get("remote_work_policy", ""),
-                                       placeholder="z.B. Hybrid (2 Tage/Woche remote)" if lang == "Deutsch" else "e.g. Hybrid (2 days remote per week)")
-    flexible_hours = st.text_input("Flexible Arbeitszeiten" if lang == "Deutsch" else "Flexible Hours",
-                                   value=st.session_state.get("flexible_hours", ""),
-                                   placeholder="z.B. Ja (Gleitzeit möglich)" if lang == "Deutsch" else "e.g. Yes (flexible schedule)")
-    relocation_assistance = st.text_input("Umzugsunterstützung" if lang == "Deutsch" else "Relocation Assistance",
-                                          value=st.session_state.get("relocation_assistance", ""),
-                                          placeholder="z.B. Ja, Umzugspaket verfügbar" if lang == "Deutsch" else "e.g. Yes, relocation package available")
+    vacation_days = st.slider(
+        "Urlaubstage" if lang == "Deutsch" else "Vacation Days",
+        20,
+        40,
+        int(st.session_state.get("vacation_days", 30)),
+    )
+    vacation_days_str = str(vacation_days)
+    remote_possible = st.checkbox(
+        "Remote-Arbeit möglich?" if lang == "Deutsch" else "Remote work possible?",
+        value=str(st.session_state.get("remote_work_policy", "")).lower() in ("ja", "yes", "true"),
+    )
+    remote_work_policy = "Ja" if remote_possible and lang == "Deutsch" else (
+        "Yes" if remote_possible else "No"
+    )
+    flexible_hours = st.text_input(
+        "Flexible Arbeitszeiten" if lang == "Deutsch" else "Flexible Hours",
+        value=st.session_state.get("flexible_hours", ""),
+        placeholder="z.B. Ja (Gleitzeit möglich)" if lang == "Deutsch" else "e.g. Yes (flexible schedule)",
+    )
+    relocation_possible = st.checkbox(
+        "Umzugsunterstützung?" if lang == "Deutsch" else "Relocation assistance?",
+        value=str(st.session_state.get("relocation_assistance", "")).lower() in ("ja", "yes", "true"),
+    )
+    relocation_assistance = "Ja" if relocation_possible and lang == "Deutsch" else (
+        "Yes" if relocation_possible else "No"
+    )
     return {
         "salary_range": salary_range,
         "currency": currency,
         "pay_frequency": pay_frequency,
         "bonus_scheme": bonus_scheme,
         "commission_structure": commission_structure,
-        "vacation_days": vacation_days,
+        "vacation_days": vacation_days_str,
         "remote_work_policy": remote_work_policy,
         "flexible_hours": flexible_hours,
         "relocation_assistance": relocation_assistance

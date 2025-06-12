@@ -1,9 +1,27 @@
 import streamlit as st
 from pages import wizard
+import base64
 
 # Set up page configuration (title, icon, layout, etc.)
-st.set_page_config(page_title="RoleCraft Recruitment Wizard",
-                   page_icon="🚀", layout="wide")  # wide layout for better use of space:contentReference[oaicite:0]{index=0}
+st.set_page_config(
+    page_title="RoleCraft Recruitment Wizard",
+    page_icon="🚀",
+    layout="wide",
+)
+
+
+def _set_background(path: str) -> None:
+    """Set a background image from a local file."""
+    with open(path, "rb") as img_file:
+        b64 = base64.b64encode(img_file.read()).decode()
+    css = (
+        f"<style>.stApp {{background-image: url('data:image/jpeg;base64,{b64}');"
+        "background-size: cover;background-attachment: fixed;}}</style>"
+    )
+    st.markdown(css, unsafe_allow_html=True)
+
+
+_set_background("images/AdobeStock_506577005.jpeg")
 
 # App-wide language selection (German or English)
 if "language" not in st.session_state:
