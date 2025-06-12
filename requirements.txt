@@ -8,3 +8,6 @@ beautifulsoup4
 tenacity
 pydantic
 graphviz>=0.20
+langchain
+pdfminer.six
+python-dotenv
