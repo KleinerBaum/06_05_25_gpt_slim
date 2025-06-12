@@ -32,10 +32,10 @@ def update_salary_range(state: dict[str, Any]) -> None:
             max_tokens=40,
         )
         result = response.choices[0].message.content.strip()
-    except openai.error.APIConnectionError as e:
+    except openai.APIConnectionError as e:
         logging.error(f"Verbindung zum OpenAI-API fehlgeschlagen: {e}")
         return
-    except openai.error.RateLimitError as e:
+    except openai.RateLimitError as e:
         logging.error(f"OpenAI Rate-Limit überschritten: {e}")
         return
     except Exception as e:
