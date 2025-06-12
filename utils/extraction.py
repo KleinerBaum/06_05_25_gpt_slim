@@ -1,4 +1,5 @@
-import io, streamlit as st
+import io
+import streamlit as st
 from pdfminer.high_level import extract_text as pdf_extract
 import re
 

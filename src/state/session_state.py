@@ -2,7 +2,6 @@
 
 import streamlit as st
 from src.config import keys
-from src.logic import trigger_engine
 
 def initialize_session_state() -> None:
     """

@@ -1,4 +1,5 @@
-import logging, pathlib
+import logging
+import pathlib
 
 LOG_FILE = pathlib.Path(__file__).resolve().parent.parent / "vacalyser.log"
 logging.basicConfig(filename=LOG_FILE, level=logging.INFO,

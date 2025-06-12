@@ -1,3 +1,5 @@
+from langchain.tools import tool
+
 @tool(
     name="scrape_company_site",
     description="Fetches <title> and meta description from a company homepage.",
