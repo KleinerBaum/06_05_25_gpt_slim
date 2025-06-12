@@ -128,7 +128,11 @@ def update_salary_range(state: dict[str, Any]) -> None:
 
 def update_publication_channels(state: dict[str, Any]) -> None:
     """Set recommended publication channels based on remote work policy."""
-    remote = state.get("remote_work_policy", "").lower()
+    raw_policy = state.get("remote_work_policy", "")
+    if isinstance(raw_policy, (list, tuple)):
+        remote = " ".join(str(v).lower() for v in raw_policy)
+    else:
+        remote = str(raw_policy).lower()
     if remote in {"hybrid", "full remote"}:
         state["desired_publication_channels"] = "LinkedIn Remote Jobs; WeWorkRemotely"
 
@@ -136,7 +140,7 @@ def update_bonus_scheme(state: dict[str, Any]) -> None:
     """Suggest a bonus scheme for mid-to-senior level roles."""
     if state.get("bonus_scheme"):
         return
-    level = state.get("job_level", "").lower()
+    level = str(state.get("job_level", "")).lower()
     if level in {"mid-level", "senior", "director", "c-level", "executive"}:
         state["bonus_scheme"] = "Eligible for an annual performance bonus."
 
@@ -144,7 +148,7 @@ def update_commission_structure(state: dict[str, Any]) -> None:
     """Suggest a commission structure for sales-related roles."""
     if state.get("commission_structure"):
         return
-    title = state.get("job_title", "").lower()
+    title = str(state.get("job_title", "")).lower()
     if any(term in title for term in ("sales", "business development", "account executive", "account manager")):
         state["commission_structure"] = "Commission based on sales performance."
 
