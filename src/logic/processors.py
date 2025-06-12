@@ -7,7 +7,13 @@ from typing import Any
 import logging
 
 from src.logic.trigger_engine import TriggerEngine
-from src.llm_utils import call_with_retry, USE_LOCAL_MODEL, local_client, openai
+# Update import path to reflect new module location under utils
+from src.utils.llm_utils import (
+    call_with_retry,
+    USE_LOCAL_MODEL,
+    local_client,
+    openai,
+)
 
 # Use a fast model for suggestions
 _SUGGESTION_MODEL = "gpt-3.5-turbo"
