@@ -63,17 +63,15 @@ def build_default_graph(engine: TriggerEngine) -> None:
     # Importiere Verarbeitungsfunktionen aus Prozessor-Modulen
     from src.processors.salary import update_salary_range
     from src.processors.publication import update_publication_channels
-    # Weitere Funktionen (Aufgaben, Skills, Benefits) importieren
-    try:
-        from src.processors import update_task_list, update_must_have_skills, update_nice_to_have_skills, update_bonus_scheme, update_commission_structure
-    except ImportError:
-        # Falls in Untermodule aufgeteilt:
-        from src.processors import tasks, skills, benefits
-        update_task_list = tasks.update_task_list
-        update_must_have_skills = skills.update_must_have_skills
-        update_nice_to_have_skills = skills.update_nice_to_have_skills
-        update_bonus_scheme = benefits.update_bonus_scheme
-        update_commission_structure = benefits.update_commission_structure
+
+    # Aufgaben-, Skill- und Benefit-Funktionen aus dem Logic-Paket importieren
+    from src.logic.processors import (
+        update_task_list,
+        update_must_have_skills,
+        update_nice_to_have_skills,
+        update_bonus_scheme,
+        update_commission_structure,
+    )
     # Funktionen mit ihren Ziel-Feldern verknüpfen
     engine.register_processor("task_list", update_task_list)
     engine.register_processor("must_have_skills", update_must_have_skills)
