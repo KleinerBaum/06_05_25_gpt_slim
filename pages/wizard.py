@@ -30,8 +30,17 @@ def _ensure_engine() -> TriggerEngine:
 
 def _clamp_step() -> int:
     """Begrenzt den aktuellen wizard_step auf einen Wert zwischen 1 und 8."""
-    st.session_state["wizard_step"] = max(1, min(8, int(st.session_state.get("wizard_step", 1))))
+    st.session_state["wizard_step"] = max(1, min(8, _int_from_state("wizard_step", 1)))
     return st.session_state["wizard_step"]
+
+
+def _int_from_state(key: str, default: int) -> int:
+    """Safely parse an int from session state or return the default."""
+    val = st.session_state.get(key)
+    try:
+        return default if val is None else int(val)
+    except (TypeError, ValueError):
+        return default
 
 def fetch_url_text(url: str) -> str:
     """Holt den Inhalt der gegebenen URL und liefert bereinigten Text zurück."""
@@ -405,7 +414,7 @@ def render_step6_static():
         "Urlaubstage" if lang == "Deutsch" else "Vacation Days",
         20,
         40,
-        int(st.session_state.get("vacation_days", 30)),
+        _int_from_state("vacation_days", 30),
     )
     vacation_days_str = str(vacation_days)
     remote_possible = st.checkbox(
