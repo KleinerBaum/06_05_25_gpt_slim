@@ -8,12 +8,7 @@ import logging
 
 from src.logic.trigger_engine import TriggerEngine
 # Update import path to reflect new module location under utils
-from src.utils.llm_utils import (
-    call_with_retry,
-    USE_LOCAL_MODEL,
-    local_client,
-    openai,
-)
+from src.utils.llm_utils import call_with_retry, openai
 
 # Use a fast model for suggestions
 _SUGGESTION_MODEL = "gpt-3.5-turbo"
@@ -31,16 +26,14 @@ def update_task_list(state: dict[str, Any]) -> None:
         prompt += f" in the {industry} industry"
     prompt += ".\n- "
     try:
-        if USE_LOCAL_MODEL:
-            tasks_text = local_client.generate(prompt)  # local LLM suggestion
-        else:
-            response = call_with_retry(
-                openai.ChatCompletion.create,
-                model=_SUGGESTION_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.3, max_tokens=100
-            )
-            tasks_text = response.choices[0].message.content.strip()
+        response = call_with_retry(
+            openai.ChatCompletion.create,
+            model=_SUGGESTION_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=100,
+        )
+        tasks_text = response.choices[0].message.content.strip()
     except Exception as e:
         logging.error(f"Task list suggestion failed: {e}")
         return
@@ -60,16 +53,14 @@ def update_must_have_skills(state: dict[str, Any]) -> None:
         prompt += f" Key tasks: {tasks_info}"
     prompt += "\n- "
     try:
-        if USE_LOCAL_MODEL:
-            skills_text = local_client.generate(prompt)
-        else:
-            response = call_with_retry(
-                openai.ChatCompletion.create,
-                model=_SUGGESTION_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.3, max_tokens=100
-            )
-            skills_text = response.choices[0].message.content.strip()
+        response = call_with_retry(
+            openai.ChatCompletion.create,
+            model=_SUGGESTION_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=100,
+        )
+        skills_text = response.choices[0].message.content.strip()
     except Exception as e:
         logging.error(f"Must-have skills suggestion failed: {e}")
         return
@@ -89,16 +80,14 @@ def update_nice_to_have_skills(state: dict[str, Any]) -> None:
         prompt += f" Must-have skills already listed: {must}"
     prompt += "\n- "
     try:
-        if USE_LOCAL_MODEL:
-            extra_skills = local_client.generate(prompt)
-        else:
-            response = call_with_retry(
-                openai.ChatCompletion.create,
-                model=_SUGGESTION_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.3, max_tokens=60
-            )
-            extra_skills = response.choices[0].message.content.strip()
+        response = call_with_retry(
+            openai.ChatCompletion.create,
+            model=_SUGGESTION_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=60,
+        )
+        extra_skills = response.choices[0].message.content.strip()
     except Exception as e:
         logging.error(f"Nice-to-have skills suggestion failed: {e}")
         return
@@ -120,19 +109,17 @@ def update_salary_range(state: dict[str, Any]) -> None:
         'Answer only in the format "MIN – MAX EUR".'
     )
     try:
-        if USE_LOCAL_MODEL:
-            result = local_client.generate(prompt)
-        else:
-            response = call_with_retry(
-                openai.ChatCompletion.create,
-                model=_SUGGESTION_MODEL,
-                messages=[
-                    {"role": "system", "content": "You are a labour-market analyst."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.2, max_tokens=40
-            )
-            result = response.choices[0].message.content.strip()
+        response = call_with_retry(
+            openai.ChatCompletion.create,
+            model=_SUGGESTION_MODEL,
+            messages=[
+                {"role": "system", "content": "You are a labour-market analyst."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.2,
+            max_tokens=40,
+        )
+        result = response.choices[0].message.content.strip()
     except Exception as e:
         logging.error(f"Salary range estimation failed: {e}")
         return

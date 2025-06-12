@@ -16,13 +16,12 @@ logger = logging.getLogger(__name__)
 
 def get_role_skills(job_title: str, num_skills: int = 15) -> List[str]:
     """
-    Ermittelt eine Liste der Top-{num_skills} Skills für den gegebenen Jobtitel über OpenAI bzw. das lokale Modell.
+    Ermittelt eine Liste der Top-{num_skills} Skills für den gegebenen Jobtitel über OpenAI.
     Gibt eine Liste von Skill-Bezeichnungen zurück.
     """
     job_title = job_title.strip()
     if not job_title:
         return []
-    USE_LOCAL = config.USE_LOCAL_MODEL
     skills_list: List[str] = []
     # Prompt für den Assistant (ggf. vordefiniert) abrufen
     try:
@@ -34,34 +33,24 @@ def get_role_skills(job_title: str, num_skills: int = 15) -> List[str]:
             f"that an ideal candidate for the '{job_title}' role should possess. "
             "Provide the list as bullet points or a comma-separated list, without any additional commentary."
         )
-    if USE_LOCAL:
-        # Lokales Modell zur Skill-Generierung nutzen
-        prompt_text = f"List {num_skills} essential skills required for a {job_title}."
-        try:
-            response = vacancy_agent.local_client.generate(text=prompt_text)
-        except Exception as e:
-            logger.error(f"Lokales LLM (Skills) Fehler: {e}")
-            return skills_list
-        raw_output = response.strip()
-    else:
-        # OpenAI API nutzen
-        messages = [
-            {"role": "system", "content": assistant_prompt},
-            {"role": "user", "content": f"List {num_skills} must-have skills for a '{job_title}' position."}
-        ]
-        try:
-            completion = call_with_retry(
-                openai.ChatCompletion.create,
-                model=config.OPENAI_MODEL,
-                messages=messages,
-                temperature=0.5,
-                max_tokens=200
-            )
-        except Exception as e:
-            logger.error(f"OpenAI API Fehler bei get_role_skills: {e}")
-            return skills_list
-        raw_output = completion.choices[0].message.content if completion and completion.choices else ""
-        raw_output = (raw_output or "").strip()
+    # OpenAI API nutzen
+    messages = [
+        {"role": "system", "content": assistant_prompt},
+        {"role": "user", "content": f"List {num_skills} must-have skills for a '{job_title}' position."}
+    ]
+    try:
+        completion = call_with_retry(
+            openai.ChatCompletion.create,
+            model=config.OPENAI_MODEL,
+            messages=messages,
+            temperature=0.5,
+            max_tokens=200,
+        )
+    except Exception as e:
+        logger.error(f"OpenAI API Fehler bei get_role_skills: {e}")
+        return skills_list
+    raw_output = completion.choices[0].message.content if completion and completion.choices else ""
+    raw_output = (raw_output or "").strip()
     # Ergebnis-String in Skills-Liste umwandeln
     if not raw_output:
         return skills_list

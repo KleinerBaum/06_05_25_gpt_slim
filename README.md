@@ -8,15 +8,13 @@ Set these variables in a `.env` file or your deployment environment. Read them i
 
 - `STREAMLIT_ENV` – `development` or `production` to toggle features.
 - `LANGUAGE` – default UI language (`en` or `de`).
-- `MODEL_PROVIDER` – which LLM backend to use (`openai` or `ollama`).
-- `DEFAULT_MODEL` – model name used by the provider (e.g. `gpt-4o`).
+- `DEFAULT_MODEL` – OpenAI model name (e.g. `gpt-4o`).
 - `VECTOR_STORE_PATH` – path to the vector database directory.
 
 | Variable | Example | Purpose |
 | --- | --- | --- |
 | STREAMLIT_ENV | development | environment switch |
 | LANGUAGE | en | default UI language |
-| MODEL_PROVIDER | openai | LLM backend |
 | DEFAULT_MODEL | gpt-4o | base model name |
 | VECTOR_STORE_PATH | ./vector_store | path to vector DB |
 
@@ -27,7 +25,6 @@ Sensitive values must never be committed. Use `secrets.toml` (for Streamlit) or 
 
 - `OPENAI_API_KEY`
 - `OPENAI_ORG_ID`
-- `OLLAMA_API_KEY`
 - `DATABASE_URL`
 - `SECRET_KEY`
 
@@ -35,11 +32,10 @@ Ensure `secrets.toml` is excluded via `.gitignore`.
 
 ## Setup
 
-Install dependencies and prepare local models before running the app:
+Install dependencies before running the app:
 
 ```bash
 pip install -r requirements.txt
-python scripts/download_models.py  # if models are required
 ```
 
 Create any needed folders (e.g. `uploads/`, `logs/`) before starting Streamlit:

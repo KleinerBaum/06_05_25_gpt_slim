@@ -7,7 +7,6 @@ Set non-secret configuration in a `.env` file and read them using `os.environ.ge
 
 - `STREAMLIT_ENV` – switch between `development` and `production`.
 - `LANGUAGE` – default UI language (`en` or `de`).
-- `MODEL_PROVIDER` – model backend (`openai` or `ollama`).
 - `DEFAULT_MODEL` – default model name for the provider.
 - `VECTOR_STORE_PATH` – path to your vector database directory.
 
@@ -16,7 +15,6 @@ Set non-secret configuration in a `.env` file and read them using `os.environ.ge
 | --- | --- | --- |
 | STREAMLIT_ENV | development | environment switch |
 | LANGUAGE | en | default UI language |
-| MODEL_PROVIDER | openai | LLM backend |
 | DEFAULT_MODEL | gpt-4o | base model name |
 | VECTOR_STORE_PATH | ./vector_store | path to vector DB |
 
@@ -29,7 +27,6 @@ Required secrets include:
 
 - `OPENAI_API_KEY`
 - `OPENAI_ORG_ID`
-- `OLLAMA_API_KEY`
 - `DATABASE_URL`
 - `SECRET_KEY`
 
@@ -40,7 +37,6 @@ Before running the app locally:
 
 ```bash
 pip install -r requirements.txt
-python scripts/download_models.py    # if models are needed
 ```
 
 Ensure directories such as `uploads/` and `logs/` exist. Then start the app with `streamlit run app.py`.
