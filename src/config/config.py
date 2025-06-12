@@ -14,8 +14,15 @@ try:
 except ImportError:
     pass
 
+# Allgemeine Umgebungsvariablen
+STREAMLIT_ENV = os.getenv("STREAMLIT_ENV", "development")
+LANGUAGE = os.getenv("LANGUAGE", "en")
+MODEL_PROVIDER = os.getenv("MODEL_PROVIDER", "openai")
+DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4o")
+VECTOR_STORE_PATH = os.getenv("VECTOR_STORE_PATH", "./vector_store")
+
 # OpenAI Modell für ChatCompletion (mit Function Calling)
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4-0613")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", DEFAULT_MODEL)
 # Lokales LLM Modell (für LocalLLMClient)
 LOCAL_MODEL = os.getenv("LOCAL_MODEL", "llama3.2-3b")
 # Flag: Lokalen Modus verwenden (1/0 in Umgebungsvariable oder Boolean in secrets)
