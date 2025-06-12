@@ -1,7 +1,7 @@
 # config.py
 """Globale Konfiguration für Vacalyser.
 
-Lädt Einstellungen aus .env (lokal) oder st.secrets (Deployment) 
+Lädt Einstellungen aus .env (lokal) oder st.secrets (Deployment)
 und stellt zentrale Parameter zur Verfügung.
 """
 import os
@@ -10,6 +10,7 @@ import streamlit as st
 # .env-Datei laden (sofern vorhanden)
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     pass
@@ -47,7 +48,10 @@ if "openai" in st.secrets:
         SALARY_ESTIMATION_MODEL = secrets_data["SALARY_ESTIMATION_MODEL"]
     # Lokaler Modus (als Bool oder "1"/"0")
     if secrets_data.get("USE_LOCAL_MODE") is not None:
-        USE_LOCAL_MODE = bool(str(secrets_data["USE_LOCAL_MODE"]).strip() in {"1", "True", "true"})
+        USE_LOCAL_MODE = bool(
+            str(secrets_data["USE_LOCAL_MODE"]).strip()
+            in {"1", "True", "true"}
+        )
 
 # Zusätzlich Umgebungsvariable VACALYSER_LOCAL_MODE (für Kompatibilität)
 if os.getenv("VACALYSER_LOCAL_MODE", "") == "1":
@@ -56,4 +60,8 @@ if os.getenv("VACALYSER_LOCAL_MODE", "") == "1":
 # OpenAI API Key global setzen, falls vorhanden
 if OPENAI_API_KEY:
     import openai
+
     openai.api_key = OPENAI_API_KEY
+
+# Compatibility alias for modules expecting the old variable name
+USE_LOCAL_MODEL = USE_LOCAL_MODE
