@@ -5,9 +5,13 @@ import openai
 class OpenAIModel:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        openai.api_key = os.getenv("OPENAI_API_KEY")
+        key_from_env = os.getenv("OPENAI_API_KEY")
+        if key_from_env:
+            openai.api_key = key_from_env
         if not openai.api_key:
-            self.logger.warning("OPENAI_API_KEY fehlt – OpenAI‑Aufrufe schlagen fehl.")
+            self.logger.warning(
+                "OPENAI_API_KEY fehlt – OpenAI-Aufrufe schlagen fehl."
+            )
 
     def generate(self, prompt: str, temperature: float = 0.2) -> str:
         if not openai.api_key:
