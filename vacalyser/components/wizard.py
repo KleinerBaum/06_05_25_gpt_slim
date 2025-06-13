@@ -1,6 +1,6 @@
 from __future__ import annotations
 import streamlit as st
-import requests
+import requests  # type: ignore
 from streamlit_sortables import sort_items
 
 # Vacalyser-Module und Utilities importieren
@@ -291,7 +291,7 @@ def start_discovery_page():
                             st.session_state[key] = value
                 # TriggerEngine benachrichtigen, damit abhängige Felder berechnet werden
                 for k in result.keys():
-                    _ensure_engine().notify_change(k, st.session_state)
+                    _ensure_engine().notify_change(k, dict(st.session_state))
                 st.success(
                     "🎯 Analyse abgeschlossen! Wichtige Felder wurden automatisch ausgefüllt."
                     if lang == "Deutsch"
@@ -323,7 +323,7 @@ def _handle_static_step(step: int, render_func):
     # Eingegebene Werte speichern und TriggerEngine benachrichtigen
     for k, v in render_vals.items():
         st.session_state[k] = v
-        _ensure_engine().notify_change(k, st.session_state)
+        _ensure_engine().notify_change(k, dict(st.session_state))
     # Zusammenfassung der bisher ausgefüllten Felder anzeigen
     display_step_summary(step)
     # Button zum nächsten Schritt

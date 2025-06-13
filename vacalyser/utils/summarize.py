@@ -1,8 +1,11 @@
 from __future__ import annotations
 import logging
-import openai
+from typing import Any, cast
+import openai  # type: ignore
 from .llm_utils import call_with_retry
 from vacalyser.utils import config
+
+openai = cast(Any, openai)
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +22,7 @@ def summarize_text(text: str, quality: str = "standard") -> str:
     )
     try:
         response = call_with_retry(
-            openai.ChatCompletion.create,
+            openai.ChatCompletion.create,  # type: ignore[attr-defined]
             model=config.OPENAI_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=temperature,

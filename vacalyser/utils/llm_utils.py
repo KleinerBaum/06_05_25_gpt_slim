@@ -1,9 +1,9 @@
 from __future__ import annotations
 import re
 import logging
-from typing import List
+from typing import Any, List, cast
 
-import openai
+import openai  # type: ignore
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -14,6 +14,8 @@ from tenacity import (
 # Vacancy Agent und Konfiguration importieren
 from vacalyser.services import vacancy_agent
 from vacalyser.utils import config
+
+openai = cast(Any, openai)
 
 # Logger konfigurieren
 logging.basicConfig(level=logging.INFO)
@@ -49,7 +51,7 @@ def get_role_skills(job_title: str, num_skills: int = 15) -> List[str]:
     ]
     try:
         completion = call_with_retry(
-            openai.ChatCompletion.create,
+            openai.ChatCompletion.create,  # type: ignore[attr-defined]
             model=config.OPENAI_MODEL,
             messages=messages,
             temperature=0.5,

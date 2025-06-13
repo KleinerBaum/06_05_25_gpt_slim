@@ -1,16 +1,24 @@
 from __future__ import annotations
 import json
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
-import openai
-
-# Globale Konfiguration laden (Modellwahl, API-Schlüssel, usw.)
+import openai  # type: ignore
 from vacalyser.utils import config
+
+openai = cast(Any, openai)
 
 # Logger konfigurieren
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Default prompt for skills extraction used by llm_utils.get_role_skills
+SKILLS_ASSISTANT_PROMPT = (
+    "You are an expert career advisor. The user will provide a job title. "
+    "List the top {num_skills} must-have skills (technical skills and core competencies) "
+    "that an ideal candidate for the '{job_title}' role should possess. "
+    "Provide the list as bullet points or a comma-separated list, without any additional commentary."
+)
 
 
 # Funktionen (Tools) für OpenAI Function Calling definieren
@@ -59,7 +67,7 @@ SYSTEM_MESSAGE = (
 
 def auto_fill_job_spec(
     input_url: str = "",
-    file_bytes: bytes = None,
+    file_bytes: bytes | None = None,
     file_name: str = "",
     summary_quality: str = "standard",
 ) -> Dict[str, Any]:
@@ -117,7 +125,7 @@ def auto_fill_job_spec(
         {"role": "user", "content": user_message},
     ]
     try:
-        response = openai.ChatCompletion.create(
+        response = openai.ChatCompletion.create(  # type: ignore[attr-defined]
             model=config.OPENAI_MODEL,
             messages=messages,
             functions=FUNCTIONS,
@@ -169,7 +177,7 @@ def auto_fill_job_spec(
         # Ergebnis der Funktion als Assistant-Antwort hinzufügen und zweiten API-Call durchführen
         messages.append({"role": "function", "name": func_name, "content": func_result})
         try:
-            second_response = openai.ChatCompletion.create(
+            second_response = openai.ChatCompletion.create(  # type: ignore[attr-defined]
                 model=config.OPENAI_MODEL,
                 messages=messages,
                 functions=FUNCTIONS,
@@ -204,7 +212,7 @@ def auto_fill_job_spec(
         # Versuchen, das LLM sein Format korrigieren zu lassen
         repair_system_msg = "Your previous output was not valid JSON. Only output a valid JSON matching JobSpec now."
         try:
-            repair_resp = openai.ChatCompletion.create(
+            repair_resp = openai.ChatCompletion.create(  # type: ignore[attr-defined]
                 model=config.OPENAI_MODEL,
                 messages=[
                     {"role": "system", "content": SYSTEM_MESSAGE},
