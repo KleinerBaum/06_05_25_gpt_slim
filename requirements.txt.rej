@@ -1,19 +1,14 @@
---- requirements.txt
-+++ requirements.txt
-@@ -1,14 +1,14 @@
- streamlit
- openai
- requests
- networkx
--pymupdf==1.25.5       
--python-docx   
-+pymupdf==1.25.5
-+python-docx>=1.1
- beautifulsoup4
- tenacity
- pydantic
- graphviz>=0.20
- langchain
- pdfminer.six
- python-dotenv
- streamlit-sortables
+streamlit
+openai
+requests
+networkx
+pymupdf==1.25.5
+python-docx>=1.1
+beautifulsoup4
+tenacity
+pydantic
+graphviz>=0.20
+langchain
+pdfminer.six
+python-dotenv
+streamlit-sortables
