@@ -11,6 +11,7 @@ from services.scraping_tools import scrape_company_site
 from utils.text_cleanup import clean_text
 from utils.keys import STEP_KEYS
 from services.vacancy_agent import auto_fill_job_spec
+from utils import config
 
 # Session State initialisieren (nur beim ersten Aufruf)
 initialize_session_state()
@@ -261,6 +262,14 @@ def start_discovery_page():
                 if lang == "Deutsch"
                 else "⚠️ Please provide a valid URL or upload a file."
             )
+            return
+        if not config.OPENAI_API_KEY:
+            st.error(
+                "❌ KI-Funktionen nicht verfügbar. Bitte OPENAI_API_KEY konfigurieren."
+                if lang == "Deutsch"
+                else "❌ AI features are disabled. Set OPENAI_API_KEY in your environment or Streamlit secrets."
+            )
+            match_and_store_keys(raw_text)
             return
         # Sprache der Quelle grob erkennen (Deutsch vs. Englisch)
         sample = raw_text[:500].lower()
