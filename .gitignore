@@ -173,3 +173,9 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 secrets.toml
+
+# Local patches and backups
+mein_patch.patch
+requirements.txt.orig
+requirements.txt.rej
+=1.1
