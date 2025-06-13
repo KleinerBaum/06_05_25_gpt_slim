@@ -4,13 +4,13 @@ import requests  # type: ignore
 from streamlit_sortables import sort_items
 
 # Vacalyser-Module und Utilities importieren
-from vacalyser.state.session_state import initialize_session_state
-from vacalyser.logic.trigger_engine import TriggerEngine, build_default_graph
-from vacalyser.logic.file_tools import extract_text_from_file
-from vacalyser.services.scraping_tools import scrape_company_site
-from vacalyser.utils.text_cleanup import clean_text
-from vacalyser.utils.keys import STEP_KEYS
-from vacalyser.services.vacancy_agent import auto_fill_job_spec
+from state.session_state import initialize_session_state
+from logic.trigger_engine import TriggerEngine, build_default_graph
+from logic.file_tools import extract_text_from_file
+from services.scraping_tools import scrape_company_site
+from utils.text_cleanup import clean_text
+from utils.keys import STEP_KEYS
+from services.vacancy_agent import auto_fill_job_spec
 
 # Session State initialisieren (nur beim ersten Aufruf)
 initialize_session_state()
