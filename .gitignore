@@ -173,7 +173,7 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 secrets.toml
-!/.streamlit/secrets.toml
+.streamlit/secrets.toml
 
 # Local patches and backups
 mein_patch.patch
