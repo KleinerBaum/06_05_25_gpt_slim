@@ -32,11 +32,11 @@ from typing import Literal
 import fitz  # PyMuPDF
 from docx import Document
 
-from vacalyser.utils.text_cleanup import clean_text
+from utils.text_cleanup import clean_text
 
 # Optionaler Decorator (funktioniert auch ohne tool_registry)
 try:
-    from vacalyser.utils.tool_registry import tool
+    from utils.tool_registry import tool
 except (ImportError, ModuleNotFoundError):  # Fallback-Decorator
 
     def tool(_func=None, **_kwargs):  # type: ignore

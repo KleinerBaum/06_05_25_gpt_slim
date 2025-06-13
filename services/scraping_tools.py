@@ -1,6 +1,6 @@
 # Optional decorator (works even without tool_registry)
 try:
-    from vacalyser.utils.tool_registry import tool
+    from utils.tool_registry import tool
 except (ImportError, ModuleNotFoundError):  # Fallback decorator
 
     def tool(_func=None, **_kwargs):  # type: ignore

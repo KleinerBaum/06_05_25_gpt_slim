@@ -1,7 +1,8 @@
 # session_state.py
 
 import streamlit as st
-from vacalyser.utils import keys
+
+from utils import keys
 
 
 def initialize_session_state() -> None:
