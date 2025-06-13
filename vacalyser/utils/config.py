@@ -42,6 +42,9 @@ if "openai" in st.secrets:
 
 # OpenAI API Key global setzen, falls vorhanden
 if OPENAI_API_KEY:
-    import openai
+    from typing import Any, cast
+    import openai  # type: ignore
+
+    openai = cast(Any, openai)
 
     openai.api_key = OPENAI_API_KEY

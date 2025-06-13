@@ -3,11 +3,13 @@
 """Functions to auto-update wizard fields using AI suggestions or logic, and registration of processors."""
 
 from __future__ import annotations
-from typing import Any
+from typing import Any, cast
 import logging
 
 from vacalyser.logic.trigger_engine import TriggerEngine
-from vacalyser.utils.llm_utils import call_with_retry, openai
+from vacalyser.utils.llm_utils import call_with_retry, openai  # type: ignore
+
+openai = cast(Any, openai)
 
 # Use a fast model for suggestions
 _SUGGESTION_MODEL = "gpt-3.5-turbo"
@@ -27,7 +29,7 @@ def update_task_list(state: dict[str, Any]) -> None:
     prompt += ".\n- "
     try:
         response = call_with_retry(
-            openai.ChatCompletion.create,
+            openai.ChatCompletion.create,  # type: ignore[attr-defined]
             model=_SUGGESTION_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
@@ -55,7 +57,7 @@ def update_must_have_skills(state: dict[str, Any]) -> None:
     prompt += "\n- "
     try:
         response = call_with_retry(
-            openai.ChatCompletion.create,
+            openai.ChatCompletion.create,  # type: ignore[attr-defined]
             model=_SUGGESTION_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
@@ -83,7 +85,7 @@ def update_nice_to_have_skills(state: dict[str, Any]) -> None:
     prompt += "\n- "
     try:
         response = call_with_retry(
-            openai.ChatCompletion.create,
+            openai.ChatCompletion.create,  # type: ignore[attr-defined]
             model=_SUGGESTION_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
@@ -117,7 +119,7 @@ def update_salary_range(state: dict[str, Any]) -> None:
     )
     try:
         response = call_with_retry(
-            openai.ChatCompletion.create,
+            openai.ChatCompletion.create,  # type: ignore[attr-defined]
             model=_SUGGESTION_MODEL,
             messages=[
                 {"role": "system", "content": "You are a labour-market analyst."},
