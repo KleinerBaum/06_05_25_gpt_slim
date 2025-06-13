@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, cast
 
 import openai  # type: ignore
-from vacalyser.utils import config
+from utils import config
 
 openai = cast(Any, openai)
 
@@ -105,8 +105,8 @@ def auto_fill_job_spec(
         except Exception:
             text_length = 0
         if text_length > 100_000:  # ~100 KB
-            from vacalyser.logic.file_tools import extract_text_from_file
-            from vacalyser.utils.summarize import summarize_text
+            from logic.file_tools import extract_text_from_file
+            from utils.summarize import summarize_text
 
             extracted_text = extract_text_from_file(file_bytes, file_name)
             if isinstance(extracted_text, str) and len(extracted_text) > 5000:
@@ -148,7 +148,7 @@ def auto_fill_job_spec(
         func_result = ""
         try:
             if func_name == "scrape_company_site":
-                from vacalyser.services.scraping_tools import scrape_company_site
+                from services.scraping_tools import scrape_company_site
 
                 result_data = scrape_company_site(**func_args)
                 if isinstance(result_data, dict):
@@ -160,7 +160,7 @@ def auto_fill_job_spec(
                 else:
                     func_result = str(result_data)
             elif func_name == "extract_text_from_file":
-                from vacalyser.logic.file_tools import extract_text_from_file
+                from logic.file_tools import extract_text_from_file
                 import base64
 
                 file_content_str = func_args.get("file_content", "")
@@ -204,7 +204,7 @@ def auto_fill_job_spec(
         return {}
     # JSON-String in Pydantic-Modell JobSpec validieren und parsen
     try:
-        from vacalyser.models.job_models import JobSpec
+        from models.job_models import JobSpec
 
         job_spec = JobSpec.model_validate_json(content_str)
     except Exception as e:

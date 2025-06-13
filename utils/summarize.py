@@ -3,7 +3,7 @@ import logging
 from typing import Any, cast
 import openai  # type: ignore
 from .llm_utils import call_with_retry
-from vacalyser.utils import config
+from utils import config
 
 openai = cast(Any, openai)
 

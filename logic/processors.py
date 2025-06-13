@@ -6,8 +6,8 @@ from __future__ import annotations
 from typing import Any, cast
 import logging
 
-from vacalyser.logic.trigger_engine import TriggerEngine
-from vacalyser.utils.llm_utils import call_with_retry, openai  # type: ignore
+from logic.trigger_engine import TriggerEngine
+from utils.llm_utils import call_with_retry, openai  # type: ignore
 
 openai = cast(Any, openai)
 

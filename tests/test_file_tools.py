@@ -1,13 +1,14 @@
 import io
+
 import sys
 from pathlib import Path
 
 import fitz
 from docx import Document
 
-sys.path.append(str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from vacalyser.logic.file_tools import extract_text_from_file
+from logic.file_tools import extract_text_from_file
 
 
 def _make_pdf_bytes(text: str) -> bytes:

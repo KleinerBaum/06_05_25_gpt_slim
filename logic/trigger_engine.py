@@ -65,7 +65,7 @@ def build_default_graph(engine: TriggerEngine) -> None:
     """Befüllt die TriggerEngine mit dem Abhängigkeitsgraphen und registriert die Verarbeitungsfunktionen."""
     engine.register_dependencies(_DEPENDENCY_PAIRS)
     # Importiere Verarbeitungsfunktionen
-    from vacalyser.logic.processors import (
+    from logic.processors import (
         update_salary_range,
         update_publication_channels,
         update_task_list,

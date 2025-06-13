@@ -12,8 +12,8 @@ from tenacity import (
 )
 
 # Vacancy Agent und Konfiguration importieren
-from vacalyser.services import vacancy_agent
-from vacalyser.utils import config
+from services import vacancy_agent
+from utils import config
 
 openai = cast(Any, openai)
 

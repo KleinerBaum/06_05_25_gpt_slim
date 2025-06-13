@@ -1,6 +1,7 @@
-import streamlit as st
-from vacalyser.components import wizard
 import base64
+import streamlit as st
+
+from components import wizard
 
 # Set up page configuration (title, icon, layout, etc.)
 st.set_page_config(
@@ -21,7 +22,7 @@ def _set_background(path: str) -> None:
     st.markdown(css, unsafe_allow_html=True)
 
 
-_set_background("../images/AdobeStock_506577005.jpeg")
+_set_background("images/AdobeStock_506577005.jpeg")
 
 # App-wide language selection (German or English)
 if "language" not in st.session_state:
