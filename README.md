@@ -15,7 +15,21 @@ streamlit run app.py
 
 ### API Keys
 
-AI-powered features require an OpenAI API key. Set `OPENAI_API_KEY` in your `.env` file or in `secrets.toml` so the wizard can extract information automatically.
+AI-powered features require an OpenAI API key. Create a `.streamlit/secrets.toml` file and add your credentials there. Example:
+
+```toml
+[openai]
+OPENAI_API_KEY = "YOUR_OPENAI_KEY"
+OPENAI_ORG_ID = "YOUR_OPENAI_ORG_ID"
+
+[database]
+DATABASE_URL = "postgresql://user:password@host/db"
+
+[general]
+SECRET_KEY = "replace-me"
+```
+
+You can also set the variables via a `.env` file during local development.
 
 ## Project Structure
 
