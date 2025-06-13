@@ -1,7 +1,7 @@
 # Vacalyser
 ## Setup
 
-Install dependencies before running the app:
+Install dependencies before running the app (includes `faiss-cpu` for the vector store):
 
 ```bash
 pip install -r requirements.txt
