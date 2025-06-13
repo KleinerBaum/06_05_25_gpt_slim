@@ -11,6 +11,11 @@ from services.scraping_tools import scrape_company_site
 from utils.text_cleanup import clean_text
 from utils.keys import STEP_KEYS
 from services.vacancy_agent import auto_fill_job_spec
+from logic.job_tools import (
+    normalize_job_title,
+    progress_percentage,
+    highlight_keywords,
+)
 from utils import config
 
 # Session State initialisieren (nur beim ersten Aufruf)
@@ -198,6 +203,8 @@ def start_discovery_page():
         btn_upload = "📂 Upload PDF / DOCX"
     st.markdown(intro_text)
     st.header("Vacalyzer – Start Discovery")
+    prog = progress_percentage(st.session_state)
+    st.progress(prog / 100.0, text=f"{prog}% complete")
     st.write(
         "Gib einen Jobtitel ein und entweder eine URL zu einer bestehenden Stellenanzeige oder lade eine Stellenbeschreibung hoch. "
         "Der Assistent analysiert die Inhalte und füllt relevante Felder automatisch aus."
@@ -217,7 +224,7 @@ def start_discovery_page():
             ),
         )
         if job_title:
-            st.session_state["job_title"] = job_title
+            st.session_state["job_title"] = normalize_job_title(job_title)
         input_url = st.text_input(
             (
                 "🔗 Stellenanzeigen-URL (optional)"
@@ -301,6 +308,17 @@ def start_discovery_page():
                 # TriggerEngine benachrichtigen, damit abhängige Felder berechnet werden
                 for k in result.keys():
                     _ensure_engine().notify_change(k, dict(st.session_state))
+                skills = st.session_state.get("must_have_skills", "").split("\n")
+                highlighted = highlight_keywords(raw_text, skills)
+                with st.expander(
+                    (
+                        "Keyword Highlights"
+                        if lang != "Deutsch"
+                        else "Wichtige Stichworte"
+                    ),
+                    expanded=False,
+                ):
+                    st.write(highlighted)
                 st.success(
                     "🎯 Analyse abgeschlossen! Wichtige Felder wurden automatisch ausgefüllt."
                     if lang == "Deutsch"
