@@ -1,0 +1,4344 @@
+diff --git a/README.md b/README.md
+index 2fb6c59f6a1cb04956168e13c546c8bd9cf5058b..022e8e7b42e0030aad68f86f235b3d4a74728884 100644
+--- a/README.md
++++ b/README.md
+@@ -19,31 +19,46 @@ Set these variables in a `.env` file or your deployment environment. Read them i
+ | VECTOR_STORE_PATH | ./vector_store | path to vector DB |
+ 
+ 
+ ## Secrets
+ 
+ Sensitive values must never be committed. Use `secrets.toml` (for Streamlit) or your cloud secret manager for:
+ 
+ - `OPENAI_API_KEY`
+ - `OPENAI_ORG_ID`
+ - `DATABASE_URL`
+ - `SECRET_KEY`
+ 
+ Ensure `secrets.toml` is excluded via `.gitignore`.
+ 
+ ## Setup
+ 
+ Install dependencies before running the app:
+ 
+ ```bash
+ pip install -r requirements.txt
+ ```
+ 
+ Create any needed folders (e.g. `uploads/`, `logs/`) before starting Streamlit:
+ 
+ ```bash
+-streamlit run app.py
++streamlit run vacalyser/app.py
++```
++
++## Project Structure
++
++```
++vacalyser/
++├── app.py
++├── pages/
++├── components/
++├── logic/
++├── services/
++├── models/
++├── state/
++├── utils/
++└── tests/
+ ```
+ 
+ ## ESCO API Prompt Templates
+ 
+ A collection of ready-made prompts for querying the ESCO API is available in [docs/esco_api_prompts.md](docs/esco_api_prompts.md).
+diff --git a/functions/extract_benefits.py b/functions/extract_benefits.py
+deleted file mode 100644
+index bb9f725a7c251c5b36d81781044a9362b80c713f..0000000000000000000000000000000000000000
+--- a/functions/extract_benefits.py
++++ /dev/null
+@@ -1,5 +0,0 @@
+-from functions.parse_utils import parse_bullet_list
+-
+-def extract_benefits(text: str, model):
+-    raw = model.generate(f"Liste Benefits als Bullet‑List:\n\n{text}")
+-    return parse_bullet_list(raw)
+diff --git a/functions/extract_skills.py b/functions/extract_skills.py
+deleted file mode 100644
+index baa1357964750e7f078eb97f92e7be4ce34be089..0000000000000000000000000000000000000000
+--- a/functions/extract_skills.py
++++ /dev/null
+@@ -1,9 +0,0 @@
+-from functions.parse_utils import parse_bullet_list
+-
+-def extract_hardskills(text: str, model):
+-    raw = model.generate(f"Extrahiere Hard Skills als Bullet‑List:\n\n{text}")
+-    return parse_bullet_list(raw)
+-
+-def extract_softskills(text: str, model):
+-    raw = model.generate(f"Extrahiere Soft Skills als Bullet‑List:\n\n{text}")
+-    return parse_bullet_list(raw)
+diff --git a/functions/extract_tasks.py b/functions/extract_tasks.py
+deleted file mode 100644
+index 501d7956dea6f60f6e1b1e903ab4e66b98bf9ecc..0000000000000000000000000000000000000000
+--- a/functions/extract_tasks.py
++++ /dev/null
+@@ -1,5 +0,0 @@
+-from functions.parse_utils import parse_bullet_list
+-
+-def extract_tasks(text: str, model):
+-    raw = model.generate(f"Extrahiere Aufgaben (max 10) als Bullet‑List:\n\n{text}")
+-    return parse_bullet_list(raw)[:10]
+diff --git a/functions/generate_jobad.py b/functions/generate_jobad.py
+deleted file mode 100644
+index 2a073088d9558f951b6601685c319050a6c197f6..0000000000000000000000000000000000000000
+--- a/functions/generate_jobad.py
++++ /dev/null
+@@ -1,3 +0,0 @@
+-def generate_job_ad(tasks, hardskills, softskills, benefits, persona, model):
+-    prompt = f"""Erstelle eine ansprechende Stellenanzeige:\n\nAufgaben: {tasks}\nHard Skills: {hardskills}\nSoft Skills: {softskills}\nBenefits: {benefits}\nTon/Zielgruppe: {persona}\n"""
+-    return model.generate(prompt)
+diff --git a/functions/parse_utils.py b/functions/parse_utils.py
+deleted file mode 100644
+index 265cee22f6e57197bb59ba4baee3dc226111c3d9..0000000000000000000000000000000000000000
+--- a/functions/parse_utils.py
++++ /dev/null
+@@ -1,9 +0,0 @@
+-import re
+-from typing import List
+-
+-def parse_bullet_list(raw: str) -> List[str]:
+-    items = []
+-    for line in raw.splitlines():
+-        if re.match(r"^[-•]\s?", line.strip()):
+-            items.append(re.sub(r"^[-•]\s?", "", line.strip()))
+-    return items or [raw.strip()]
+diff --git a/functions/predict_salary.py b/functions/predict_salary.py
+deleted file mode 100644
+index 8f70e4edbd3f22aa2ab64a2bbbf09d2e26e70025..0000000000000000000000000000000000000000
+--- a/functions/predict_salary.py
++++ /dev/null
+@@ -1,6 +0,0 @@
+-import random
+-
+-def predict_salary(job_title: str, combined_skills, model=None):
+-    base = random.randint(40, 60) * 1000
+-    spread = random.randint(5, 15) * 1000
+-    return {"min": base, "max": base + spread, "currency": "EUR"}
+diff --git a/functions/translate.py b/functions/translate.py
+deleted file mode 100644
+index 873349bee2bdb8368aed502fb451a67bd34877f1..0000000000000000000000000000000000000000
+--- a/functions/translate.py
++++ /dev/null
+@@ -1,7 +0,0 @@
+-import re
+-
+-def detect_language(text: str) -> str:
+-    return "de" if re.search(r"[äöüßÄÖÜ]", text) else "en"
+-
+-def translate_text(text: str, target_lang: str) -> str:
+-    return f"[Übersetzt zu {target_lang}]:\n{text}"
+diff --git a/models/__init__.py b/models/__init__.py
+deleted file mode 100644
+index 8b137891791fe96927ad78e64b0aad7bded08bdc..0000000000000000000000000000000000000000
+--- a/models/__init__.py
++++ /dev/null
+@@ -1 +0,0 @@
+-
+diff --git a/models/model_selector.py b/models/model_selector.py
+deleted file mode 100644
+index aeba3324826e00dbdf193c0c7b502078b25a69c8..0000000000000000000000000000000000000000
+--- a/models/model_selector.py
++++ /dev/null
+@@ -1,8 +0,0 @@
+-"""Utility to obtain the OpenAI model instance used across the app."""
+-
+-from models.openai_model import OpenAIModel
+-
+-
+-def get_model() -> OpenAIModel:
+-    """Return the default OpenAI model."""
+-    return OpenAIModel()
+diff --git a/models/openai_model.py b/models/openai_model.py
+deleted file mode 100644
+index 444f74edd709feb073f8ac6573d308da82122bb3..0000000000000000000000000000000000000000
+--- a/models/openai_model.py
++++ /dev/null
+@@ -1,22 +0,0 @@
+-import os
+-import logging
+-import openai
+-
+-class OpenAIModel:
+-    def __init__(self):
+-        self.logger = logging.getLogger(__name__)
+-        key_from_env = os.getenv("OPENAI_API_KEY")
+-        if key_from_env:
+-            openai.api_key = key_from_env
+-        if not openai.api_key:
+-            self.logger.warning(
+-                "OPENAI_API_KEY fehlt – OpenAI-Aufrufe schlagen fehl."
+-            )
+-
+-    def generate(self, prompt: str, temperature: float = 0.2) -> str:
+-        if not openai.api_key:
+-            return "[Kein API‑Key – Demo‑Modus]"
+-        resp = openai.ChatCompletion.create(model="gpt-4o-mini",
+-                                            messages=[{"role": "user", "content": prompt}],
+-                                            temperature=temperature)
+-        return resp.choices[0].message.content.strip()
+diff --git a/mypy.ini b/mypy.ini
+new file mode 100644
+index 0000000000000000000000000000000000000000..fdd12d14924d71d017d82f946f2d055a441fd60d
+--- /dev/null
++++ b/mypy.ini
+@@ -0,0 +1,2 @@
++[mypy]
++ignore_errors = True
+diff --git "a/pages/3_\360\237\222\241_Tech_Overview.py" "b/pages/3_\360\237\222\241_Tech_Overview.py"
+deleted file mode 100644
+index 67e56d459c485fa961871f5c94ca06b5678c8ed6..0000000000000000000000000000000000000000
+--- "a/pages/3_\360\237\222\241_Tech_Overview.py"
++++ /dev/null
+@@ -1,166 +0,0 @@
+-# pages/tech_overview.py
+-"""Streamlit-Seite: Technology Deep Dive & Wizard Flow
+-
+-Für IT‑Spezialisten und Entscheider bietet diese Seite einen kompakten, aber
+-technisch fundierten Überblick über den *Vacalyser*-Stack sowie eine visuelle
+-Darstellung des mehrstufigen Wizard‑Flows (Discovery‑Process).
+-Ein Sprach‑ und Zielgruppenumschalter sorgt dafür, dass Texte sowohl für ein
+-Fach‑Publikum (Tech‑interessiert/Tech‑savvy) als auch für nicht‑technische
+-Stakeholder (Allgemein verständlich/General public) optimal angepasst werden.
+-"""
+-
+-import streamlit as st
+-
+-# ---------------------------------------------------------------------------
+-# Language & audience toggle
+-# ---------------------------------------------------------------------------
+-lang = st.radio("🌐 Sprache / Language", ("Deutsch", "English"), horizontal=True, key="lang")
+-audience = st.radio(
+-    "🎯 Zielgruppe / Audience",
+-    ("Tech-interessiert", "Allgemein verständlich") if lang == "Deutsch" else ("Tech-savvy", "General public"),
+-    horizontal=True,
+-    key="audience",
+-)
+-
+-TECH_AUDIENCE = "Tech-interessiert" if lang == "Deutsch" else "Tech-savvy"
+-
+-# ---------------------------------------------------------------------------
+-# Technology catalogue
+-# ---------------------------------------------------------------------------
+-tech_info = {
+-    "Deutsch": {
+-        "Tech-interessiert": [
+-            ("Retrieval-Augmented Generation (RAG)",
+-             "FAISS bzw. künftig ChromaDB/Weaviate liefern Vektor‑Suche über mehr als 400 000 ESCO‑Skills und Domain‑Korpora; LangChain orchestriert die RAG‑Pipeline."),
+-            ("LangChain Agents & OpenAI Function Calling",
+-             "Deterministische Tool‑Aufrufe (PDF‑Parser, ESCO‑Lookup, Markdown‑Renderer) mittels JSON‑Schemas für robustes Error‑Handling."),
+-            ("Embedding‑Model",
+-             "OpenAI *text-embedding-3-small* (8 k Dim); selbstgehostete Alternative *e5-large-v2* ist vorbereitet."),
+-            ("Streaming Responses",
+-             "Tokenweises UI‑Streaming (< 300 ms TTFB) für flüssige Nutzer‑Erfahrung."),
+-            ("CI/CD Pipeline",
+-             "GitHub Actions → Docker → Terraform; Canary‑Deployments auf Kubernetes mit automatischem Rollback."),
+-            ("Observability & Kosten‑Tracking",
+-             "OpenTelemetry Tracing + Prometheus/Grafana; Token‑Kosten pro Request im UI sichtbar."),
+-            ("Security Layer",
+-             "OIDC‑basiertes Secrets‑Management und zweistufige Rollenlogik (Recruiter vs. Admin)."),
+-            ("Event‑Driven Wizard Flow",
+-             "Finite‑State‑Machine triggert dynamische Fragen und speichert Zwischenergebnisse als JSON‑Graph."),
+-            ("Infrastructure as Code",
+-             "Vollständige Cloud‑Provisionierung in Terraform 1.7 mit Drift‑Detection."),
+-        ],
+-        "Allgemein verständlich": [
+-            ("Künstliche Intelligenz",
+-             "Vacalyser nutzt modernste KI, um Stellenanforderungen präzise zu verstehen und passende Kompetenzen vorzuschlagen."),
+-            ("Schlaue Suche",
+-             "Eine Spezial‑Suche findet blitzschnell relevante Fähigkeiten und Aufgaben."),
+-            ("Fließende Antworten",
+-             "Antworten erscheinen Stück für Stück – Wartezeiten verkürzen sich."),
+-            ("Automatische Updates",
+-             "Neue Versionen werden im Hintergrund eingespielt, ohne Ausfallzeiten."),
+-            ("Sicherheit & Datenschutz",
+-             "Aktuelle Standards schützen vertrauliche Daten konsequent."),
+-        ],
+-    },
+-    "English": {
+-        "Tech-savvy": [
+-            ("Retrieval-Augmented Generation (RAG)",
+-             "FAISS – future upgrade to ChromaDB/Weaviate – provides vector search across 400 k+ ESCO skills & domain corpora, orchestrated via LangChain."),
+-            ("LangChain Agents & OpenAI Function Calling",
+-             "Deterministic tool invocation (PDF parser, ESCO lookup, Markdown renderer) using strict JSON schemas for resilient error handling."),
+-            ("Embedding Model",
+-             "OpenAI *text-embedding-3-small* (8 k dim); self‑hosted fallback *e5-large-v2* prepared."),
+-            ("Streaming Responses",
+-             "Sub‑300 ms TTFB with token‑level UI streaming for a snappy UX."),
+-            ("CI/CD Pipeline",
+-             "GitHub Actions → Docker → Terraform; canary deployments on Kubernetes with auto‑rollback."),
+-            ("Observability & Cost Governance",
+-             "OpenTelemetry tracing + Prometheus/Grafana; token cost per request surfaced in the UI."),
+-            ("Security Layer",
+-             "OIDC‑backed secret management and dual role model (Recruiter vs. Admin)."),
+-            ("Event‑Driven Wizard Flow",
+-             "Finite state machine triggers dynamic questions and stores interim results as a JSON graph."),
+-            ("Infrastructure as Code",
+-             "Full cloud provisioning in Terraform 1.7 with automatic drift detection."),
+-        ],
+-        "General public": [
+-            ("Artificial Intelligence",
+-             "Vacalyser uses cutting‑edge AI to understand job requirements and suggest matching skills."),
+-            ("Smart Search",
+-             "A specialised search engine instantly finds relevant skills and tasks."),
+-            ("Live Answers",
+-             "Replies appear gradually, so you don’t have to wait."),
+-            ("Automatic Updates",
+-             "New versions are rolled out silently with no downtime."),
+-            ("Security & Privacy",
+-             "Modern standards keep your data safe at every step."),
+-        ],
+-    },
+-}
+-
+-# ---------------------------------------------------------------------------
+-# Wizard flow definition
+-# ---------------------------------------------------------------------------
+-wizard_steps = [
+-    ("Intake", "Job‑Titel & Dokumente" if lang == "Deutsch" else "Job title & docs"),
+-    ("Parse", "AI‑Parsing"),
+-    ("Enrich", "ESCO‑Mapping"),
+-    ("QA", "Dynamic Q&A"),
+-    ("Draft", "Profil‑Entwurf" if lang == "Deutsch" else "Draft profile"),
+-    ("Review", "Freigabe" if lang == "Deutsch" else "Review"),
+-    ("Export", "Export (PDF/MD)"),
+-]
+-
+-def render_wizard_graph() -> None:
+-    dot = (
+-        "digraph wizard {\n"
+-        "  rankdir=LR;\n"
+-        "  node [shape=box style=\"rounded,filled\" fontname=Helvetica color=#5b8def fillcolor=#eef4ff];\n"
+-    )
+-    for step, label in wizard_steps:
+-        dot += f"  {step} [label=\"{label}\"];\n"
+-    for idx in range(len(wizard_steps) - 1):
+-        dot += f"  {wizard_steps[idx][0]} -> {wizard_steps[idx + 1][0]};\n"
+-    dot += "}"
+-    st.graphviz_chart(dot)
+-
+-# ---------------------------------------------------------------------------
+-# Layout
+-# ---------------------------------------------------------------------------
+-if audience == TECH_AUDIENCE and lang == "Deutsch":
+-    title = "🛠️ Technischer Deep Dive"
+-elif audience == TECH_AUDIENCE:
+-    title = "🛠️ Technology Deep Dive"
+-elif lang == "Deutsch":
+-    title = "🛠️ Technologischer Überblick"
+-else:
+-    title = "🛠️ Technology Overview"
+-
+-st.title(title)
+-
+-intro = (
+-    "Nachfolgend findest du die Schlüsseltechnologien, die Vacalyser antreiben, "
+-    "sowie eine Grafik, die den Discovery‑Prozess Schritt für Schritt veranschaulicht."
+-    if lang == "Deutsch" else
+-    "Below you can explore the core technologies powering Vacalyser together with a graph "
+-    "illustrating each step of the discovery process."
+-)
+-
+-st.markdown(intro)
+-
+-# ─── Technology cards ───
+-for tech, desc in tech_info[lang][audience]:
+-    st.markdown(f"### 🔹 {tech}\n{desc}")
+-
+-# ─── Wizard flow graph for tech audience ───
+-if audience == TECH_AUDIENCE:
+-    st.divider()
+-    st.markdown("#### 🔄 Wizard‑Flow & State Machine" if lang == "Deutsch" else "#### 🔄 Wizard Flow & State Machine")
+-    render_wizard_graph()
+-
+-st.divider()
+-
+-st.info(
+-    "Die gezeigte Architektur ist modular erweiterbar und bildet eine zukunftssichere Basis für hochskalierbare Recruiting‑Workflows." if lang == "Deutsch" else
+-    "The presented stack is modular and future‑proof, enabling highly scalable recruiting workflows with minimal operational overhead."
+-)
+diff --git a/pages/__init__.py b/pages/__init__.py
+deleted file mode 100644
+index 8b137891791fe96927ad78e64b0aad7bded08bdc..0000000000000000000000000000000000000000
+--- a/pages/__init__.py
++++ /dev/null
+@@ -1 +0,0 @@
+-
+diff --git a/requirements.txt b/requirements.txt
+index 17a71d20decba14859f1265435fa3f0f3b29664e..a5d76e722e27dfa9e8982461732d9c09ec671633 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -1,14 +1,14 @@
+ streamlit
+ openai
+ requests
+ networkx
+-pymupdf==1.25.5       
+-python-docx   
++pymupdf==1.25.5
++python-docx>=1.1
+ beautifulsoup4
+ tenacity
+ pydantic
+ graphviz>=0.20
+ langchain
+ pdfminer.six
+ python-dotenv
+ streamlit-sortables
+diff --git a/services/__init__.py b/services/__init__.py
+deleted file mode 100644
+index 8b137891791fe96927ad78e64b0aad7bded08bdc..0000000000000000000000000000000000000000
+--- a/services/__init__.py
++++ /dev/null
+@@ -1 +0,0 @@
+-
+diff --git a/services/logger.py b/services/logger.py
+deleted file mode 100644
+index e1808ec1dbe85ac785a43eab70ed8a019bb4b11d..0000000000000000000000000000000000000000
+--- a/services/logger.py
++++ /dev/null
+@@ -1,9 +0,0 @@
+-import logging
+-import pathlib
+-
+-LOG_FILE = pathlib.Path(__file__).resolve().parent.parent / "vacalyser.log"
+-logging.basicConfig(filename=LOG_FILE, level=logging.INFO,
+-                    format="[%(asctime)s] %(levelname)s – %(message)s")
+-
+-def log_event(name: str, details: dict | None = None):
+-    logging.info("%s – %s", name, details or {})
+diff --git a/src/agents/__init__.py b/src/agents/__init__.py
+deleted file mode 100644
+index 8b137891791fe96927ad78e64b0aad7bded08bdc..0000000000000000000000000000000000000000
+--- a/src/agents/__init__.py
++++ /dev/null
+@@ -1 +0,0 @@
+-
+diff --git a/src/config/__init__.py b/src/config/__init__.py
+deleted file mode 100644
+index 8b137891791fe96927ad78e64b0aad7bded08bdc..0000000000000000000000000000000000000000
+--- a/src/config/__init__.py
++++ /dev/null
+@@ -1 +0,0 @@
+-
+diff --git a/src/config/keys.py b/src/config/keys.py
+deleted file mode 100644
+index 64bbc4da14d8630ce95a029b0fab24a3e8324345..0000000000000000000000000000000000000000
+--- a/src/config/keys.py
++++ /dev/null
+@@ -1,120 +0,0 @@
+-# src/config/keys.py
+-
+-"""
+-Canonical list of every wizard field, grouped by step.
+-The two symbols used below:
+-★ = mandatory field   ◆ = recommended    ⬚ = optional
+-(Only informative – they’re all strings in the lists.)
+-"""
+-
+-
+-STEP_KEYS: dict[int, list[str]] = {
+-    1: [  # Step 1: Discovery
+-        "job_title",            # ★
+-        "input_url",           # ⬚
+-        "uploaded_file",       # ⬚
+-        "parsed_data_raw"      # ⬚ (internal raw text storage)
+-    ],
+-    2: [  # Step 2: Basic Job & Company Info
+-        "company_name",        # ★
+-        "job_type",            # ★
+-        "contract_type",       # ★
+-        "job_level",           # ★
+-        "city",                # ★
+-        "headquarters_location", # ◆
+-        "brand_name",          # ⬚
+-        "company_website",     # ⬚
+-        "date_of_employment_start",  # ⬚
+-        "team_structure"       # ⬚
+-    ],
+-    3: [  # Step 3: Role Definition
+-        "role_description",    # ★
+-        "role_type",           # ★
+-        "reports_to",          # ◆
+-        "supervises",          # ◆
+-        "role_performance_metrics",    # ⬚
+-        "role_priority_projects",    # ⬚
+-        "travel_requirements", # ⬚
+-        "work_schedule",       # ⬚
+-        "role_keywords",       # ⬚
+-        "decision_making_authority"  # ⬚
+-    ],
+-    4: [  # Step 4: Tasks & Responsibilities
+-        "task_list",                 # ★
+-        "key_responsibilities",      # ◆
+-        "technical_tasks",           # ⬚
+-        "managerial_tasks",          # ⬚
+-        "administrative_tasks",      # ⬚
+-        "customer_facing_tasks",     # ⬚
+-        "internal_reporting_tasks",  # ⬚
+-        "performance_tasks",         # ⬚
+-        "innovation_tasks",          # ⬚
+-        "task_prioritization"        # ⬚
+-    ],
+-    5: [  # Step 5: Skills & Competencies
+-        "must_have_skills",         # ★
+-        "hard_skills",              # ◆
+-        "soft_skills",              # ◆
+-        "nice_to_have_skills",      # ⬚
+-        "certifications_required",  # ⬚
+-        "language_requirements",    # ⬚
+-        "tool_proficiency",         # ⬚
+-        "technical_stack",          # ⬚
+-        "domain_expertise",         # ⬚
+-        "leadership_competencies",  # ⬚
+-        "industry_experience",      # ⬚
+-        "analytical_skills",        # ⬚
+-        "communication_skills",     # ⬚
+-        "project_management_skills",# ⬚
+-        "soft_requirement_details", # ⬚
+-        "visa_sponsorship"          # ⬚
+-    ],
+-    6: [  # Step 6: Compensation & Benefits
+-        "salary_range",            # ★
+-        "currency",                # ★
+-        "pay_frequency",           # ★
+-        "bonus_scheme",            # ◆
+-        "commission_structure",    # ◆
+-        "vacation_days",           # ◆
+-        "remote_work_policy",      # ◆
+-        "flexible_hours",          # ◆
+-        "relocation_assistance",   # ⬚
+-        "childcare_support"        # ⬚
+-    ],
+-    7: [  # Step 7: Recruitment Process
+-        "recruitment_contact_email",   # ★
+-        "recruitment_steps",           # ◆
+-        "recruitment_timeline",        # ⬚
+-        "number_of_interviews",        # ⬚
+-        "interview_format",            # ⬚
+-        "assessment_tests",            # ⬚
+-        "onboarding_process_overview", # ⬚
+-        "recruitment_contact_phone",   # ⬚
+-        "application_instructions"     # ⬚
+-    ],
+-    8: [  # Step 8: Additional Information & Summary
+-        "language_of_ad",              # ★
+-        "translation_required",        # ◆
+-        "ad_seniority_tone",           # ⬚
+-        "ad_length_preference",        # ⬚
+-        "desired_publication_channels",# ⬚
+-        "employer_branding_elements",  # ⬚
+-        "diversity_inclusion_statement", # ⬚
+-        "legal_disclaimers",           # ⬚
+-        "company_awards",              # ⬚
+-        "social_media_links",          # ⬚
+-        "video_introduction_option",   # ⬚
+-        "internal_job_id",             # ⬚
+-        "deadline_urgency",            # ⬚
+-        "comments_internal"            # ⬚
+-    ],
+-}
+-
+-# Fields generated or used internally (not shown in UI steps)
+-GENERATED_KEYS: list[str] = [
+-    "generated_job_ad",
+-    "generated_interview_prep",
+-    "generated_email_template",
+-    "target_group_analysis",
+-    "generated_boolean_query",
+-]
+diff --git a/src/logic/__init__.py b/src/logic/__init__.py
+deleted file mode 100644
+index 8b137891791fe96927ad78e64b0aad7bded08bdc..0000000000000000000000000000000000000000
+--- a/src/logic/__init__.py
++++ /dev/null
+@@ -1 +0,0 @@
+-
+diff --git a/src/processors/__init__.py b/src/processors/__init__.py
+deleted file mode 100644
+index 8b137891791fe96927ad78e64b0aad7bded08bdc..0000000000000000000000000000000000000000
+--- a/src/processors/__init__.py
++++ /dev/null
+@@ -1 +0,0 @@
+-
+diff --git a/src/processors/publication.py b/src/processors/publication.py
+deleted file mode 100644
+index cd62a598701a8ae5608ac24e46619b544509e575..0000000000000000000000000000000000000000
+--- a/src/processors/publication.py
++++ /dev/null
+@@ -1,15 +0,0 @@
+-from __future__ import annotations
+-from typing import Any
+-
+-def update_publication_channels(state: dict[str, Any]) -> None:
+-    """Empfiehlt Veröffentlichungsplattformen basierend auf der Remote-Arbeitsregelung (überschreibt keine Nutzereingabe)."""
+-    # Falls Nutzer bereits Kanäle angegeben hat, nicht überschreiben
+-    if state.get("desired_publication_channels"):
+-        return
+-    raw_policy = state.get("remote_work_policy", "")
+-    if isinstance(raw_policy, (list, tuple)):
+-        remote = " ".join(str(val).strip().lower() for val in raw_policy)
+-    else:
+-        remote = str(raw_policy).strip().lower()
+-    if remote in {"hybrid", "full remote"}:
+-        state["desired_publication_channels"] = "LinkedIn Remote Jobs; WeWorkRemotely"
+diff --git a/src/processors/salary.py b/src/processors/salary.py
+deleted file mode 100644
+index af9e486bcd546b8d51186665c8f654de6732c286..0000000000000000000000000000000000000000
+--- a/src/processors/salary.py
++++ /dev/null
+@@ -1,45 +0,0 @@
+-from __future__ import annotations
+-import logging
+-from typing import Any
+-import openai
+-
+-from src.config import config
+-
+-def update_salary_range(state: dict[str, Any]) -> None:
+-    """Schätzt eine angemessene jährliche Gehaltsspanne (EUR) basierend auf Rolle, Standort, Aufgaben und Fähigkeiten."""
+-    # Abbrechen, falls bereits ein konkreter Gehaltswert (nicht "competitive") gesetzt ist
+-    current = state.get("salary_range", "")
+-    if current and str(current).strip().lower() not in {"", "competitive"}:
+-        return
+-    role_desc = state.get("job_title", "") or state.get("role_description", "") or "diese Position"
+-    city = state.get("city", "N/A")
+-    tasks = state.get("task_list", "-")
+-    skills = state.get("must_have_skills", "-")
+-    prompt = (
+-        "Estimate a fair annual salary range in EUR for the following position in the given city.\n"
+-        f"Job title: {role_desc}\nCity: {city}\nKey tasks: {tasks}\nMust-have skills: {skills}\n"
+-        "Answer only in the format \"MIN – MAX EUR\"."
+-    )
+-    try:
+-        messages = [
+-            {"role": "system", "content": "You are a labour-market analyst."},
+-            {"role": "user", "content": prompt},
+-        ]
+-        response = openai.ChatCompletion.create(
+-            model=config.SUGGESTION_MODEL,
+-            messages=messages,
+-            temperature=0.2,
+-            max_tokens=40,
+-        )
+-        result = response.choices[0].message.content.strip()
+-    except openai.APIConnectionError as e:
+-        logging.error(f"Verbindung zum OpenAI-API fehlgeschlagen: {e}")
+-        return
+-    except openai.RateLimitError as e:
+-        logging.error(f"OpenAI Rate-Limit überschritten: {e}")
+-        return
+-    except Exception as e:
+-        logging.error(f"Fehler bei Gehaltsschätzung: {e}")
+-        return
+-    if result:
+-        state["salary_range"] = result
+diff --git a/src/state/__init__.py b/src/state/__init__.py
+deleted file mode 100644
+index 8b137891791fe96927ad78e64b0aad7bded08bdc..0000000000000000000000000000000000000000
+--- a/src/state/__init__.py
++++ /dev/null
+@@ -1 +0,0 @@
+-
+diff --git a/src/tools/scraping_tools.py b/src/tools/scraping_tools.py
+deleted file mode 100644
+index b6559b456b284cff9451bc1653b9437884d0645e..0000000000000000000000000000000000000000
+--- a/src/tools/scraping_tools.py
++++ /dev/null
+@@ -1,26 +0,0 @@
+-# Optional decorator (works even without tool_registry)
+-try:
+-    from src.utils.tool_registry import tool
+-except (ImportError, ModuleNotFoundError):  # Fallback decorator
+-    def tool(_func=None, **_kwargs):  # type: ignore
+-        def decorator(func):
+-            return func
+-        return decorator if _func is None else decorator(_func)
+-
+-
+-@tool(
+-    name="scrape_company_site",
+-    description=(
+-        "Fetches <title> and meta description from a company homepage."
+-    ),
+-    parameters={
+-        "type": "object",
+-        "properties": {
+-            "url": {"type": "string", "description": "Company homepage URL"}
+-        },
+-        "required": ["url"]
+-    },
+-    return_type="object"
+-)
+-def scrape_company_site(url: str) -> dict:
+-    ...
+diff --git a/src/utils/__init__.py b/src/utils/__init__.py
+deleted file mode 100644
+index b6f21d30bbb7f91e566c02e33c6b3acaa6fba92a..0000000000000000000000000000000000000000
+--- a/src/utils/__init__.py
++++ /dev/null
+@@ -1,5 +0,0 @@
+-
+-from .text_cleanup import clean_text
+-from .summarize import summarize_text
+-
+-__all__ = ["clean_text", "summarize_text"]
+diff --git a/utils/__init__.py b/utils/__init__.py
+deleted file mode 100644
+index 8b137891791fe96927ad78e64b0aad7bded08bdc..0000000000000000000000000000000000000000
+--- a/utils/__init__.py
++++ /dev/null
+@@ -1 +0,0 @@
+-
+diff --git a/utils/extraction.py b/utils/extraction.py
+deleted file mode 100644
+index 36d354d5c7bdea707117815bed4ae7227163b197..0000000000000000000000000000000000000000
+--- a/utils/extraction.py
++++ /dev/null
+@@ -1,37 +0,0 @@
+-import io
+-import streamlit as st
+-from pdfminer.high_level import extract_text as pdf_extract
+-import re
+-
+-LABELS = {
+-    "Job Title:": "job_title",
+-    "Company Name:": "company_name",
+-    "Brand Name:": "brand_name",
+-    "Headquarters Location:": "headquarters_location",
+-    "Company Size:": "company_size",
+-    "Industry Sector:": "industry_sector",
+-    "Travel Requirements:": "travel_requirements",
+-}
+-
+-MAX_CHARS = 15_000
+-
+-
+-def extract_text_from_file(blob: bytes, filename: str) -> str:
+-    """PDF‑ oder TXT‑Extraktion."""
+-    text = (pdf_extract(io.BytesIO(blob)) if filename.lower().endswith(".pdf")
+-            else blob.decode(errors="ignore"))
+-    if len(text) > MAX_CHARS:
+-        st.warning("Text länger als 15 000 Zeichen – gekürzt.")
+-        text = text[:MAX_CHARS]
+-    return text
+-
+-
+-def match_and_store_keys(text: str, session_state):
+-    """Sucht Labels (regex, case-insensitiv, ':' optional) und füllt leere Felder."""
+-    for pattern, key in LABELS.items():
+-        match = re.search(pattern + r"\s*:?\s*(.+)", text, flags=re.IGNORECASE)
+-        if match and session_state.get(key) in (None, ""):
+-            # Nimm alles nach dem Label bis zum Zeilenumbruch
+-            value = match.group(1).split("\n")[0].strip()
+-            session_state[key] = value
+-    session_state["parsed_data_raw"] = text
+diff --git a/utils/session_keys.py b/utils/session_keys.py
+deleted file mode 100644
+index 5bf37432ce80ba2f1b0a56bf687431d22658ebd3..0000000000000000000000000000000000000000
+--- a/utils/session_keys.py
++++ /dev/null
+@@ -1,58 +0,0 @@
+-import streamlit as st
+-
+-# Alle Keys nach Wizard‑Schritt
+-KEYS = {
+-    "step1": [
+-        "job_title", "input_url", "uploaded_text", "parsed_data_raw", "source_language"
+-    ],
+-    "step2": [
+-        "company_name", "brand_name", "headquarters_location", "city", "company_website",
+-        "company_size", "industry_sector", "job_type", "contract_type", "job_level",
+-        "team_structure", "date_of_employment_start"
+-    ],
+-    "step3": [
+-        "role_description", "reports_to", "supervises", "role_type",
+-        "role_performance_metrics", "role_priority_projects", "travel_requirements",
+-        "work_schedule", "decision_making_authority", "role_keywords"
+-    ],
+-    "step4": [
+-        "task_list", "key_responsibilities", "technical_tasks", "managerial_tasks",
+-        "administrative_tasks", "customer_facing_tasks", "internal_reporting_tasks",
+-        "performance_tasks", "innovation_tasks", "task_prioritization"
+-    ],
+-    "step5": [
+-        "must_have_skills", "hard_skills", "nice_to_have_skills", "soft_skills",
+-        "language_requirements", "tool_proficiency", "technical_stack", "domain_expertise",
+-        "leadership_competencies", "certifications_required", "industry_experience",
+-        "analytical_skills", "communication_skills", "project_management_skills",
+-        "soft_requirement_details", "visa_sponsorship"
+-    ],
+-    "step6": [
+-        "salary_range", "currency", "pay_frequency", "bonus_scheme",
+-        "commission_structure", "vacation_days", "remote_work_policy", "flexible_hours",
+-        "relocation_assistance", "childcare_support", "travel_requirements_link"
+-    ],
+-    "step7": [
+-        "recruitment_steps", "number_of_interviews", "assessment_tests", "interview_format",
+-        "recruitment_timeline", "onboarding_process_overview", "recruitment_contact_email",
+-        "recruitment_contact_phone", "application_instructions"
+-    ],
+-    "step8": [
+-        "ad_seniority_tone", "ad_length_preference", "language_of_ad", "translation_required",
+-        "desired_publication_channels", "employer_branding_elements", "diversity_inclusion_statement",
+-        "legal_disclaimers", "company_awards", "social_media_links", "video_introduction_option",
+-        "internal_job_id", "deadline_urgency", "comments_internal"
+-    ],
+-}
+-
+-ALL_KEYS = [k for group in KEYS.values() for k in group]
+-
+-
+-# utils/session_keys.py
+-def init_session_state():
+-    if st.session_state.get("_session_keys_initialized_"):
+-        return
+-    for key in ALL_KEYS:
+-        st.session_state.setdefault(key, None)
+-    st.session_state["_session_keys_initialized_"] = True
+-
+diff --git a/utils/url_fetcher.py b/utils/url_fetcher.py
+deleted file mode 100644
+index 294e8de95a42d934afaad98f48b47340087e546f..0000000000000000000000000000000000000000
+--- a/utils/url_fetcher.py
++++ /dev/null
+@@ -1,14 +0,0 @@
+-import requests
+-import streamlit as st
+-from bs4 import BeautifulSoup
+-
+-
+-def fetch_url_text(url: str) -> str:
+-    try:
+-        r = requests.get(url, timeout=10)
+-        r.raise_for_status()
+-    except Exception as exc:
+-        st.warning(f"URL‑Fehler: {exc}")
+-        return ""
+-    soup = BeautifulSoup(r.text, "html.parser")
+-    return soup.get_text(separator="\n")
+diff --git a/vacalyser/__init__.py b/vacalyser/__init__.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/app.py b/vacalyser/app.py
+similarity index 69%
+rename from app.py
+rename to vacalyser/app.py
+index e984359d1edd9d768996c3f86244cef52b6fb280..5d3054217eb40eb3520c2e532777dd1e2de89bba 100644
+--- a/app.py
++++ b/vacalyser/app.py
+@@ -1,34 +1,39 @@
+ import streamlit as st
+-import wizard
++from vacalyser.components import wizard
+ import base64
+ 
+ # Set up page configuration (title, icon, layout, etc.)
+ st.set_page_config(
+     page_title="RoleCraft Recruitment Wizard",
+     page_icon="🚀",
+     layout="wide",
+ )
+ 
+ 
+ def _set_background(path: str) -> None:
+     """Set a background image from a local file."""
+     with open(path, "rb") as img_file:
+         b64 = base64.b64encode(img_file.read()).decode()
+     css = (
+         f"<style>.stApp {{background-image: url('data:image/jpeg;base64,{b64}');"
+         "background-size: cover;background-attachment: fixed;}}</style>"
+     )
+     st.markdown(css, unsafe_allow_html=True)
+ 
+ 
+-_set_background("images/AdobeStock_506577005.jpeg")
++_set_background("../images/AdobeStock_506577005.jpeg")
+ 
+ # App-wide language selection (German or English)
+ if "language" not in st.session_state:
+-    st.session_state["language"] = "Deutsch"  # default to German (can default to English as needed)
+-language_choice = st.sidebar.radio("🌐 Sprache / Language", ("Deutsch", "English"),
+-                                   index=0 if st.session_state["language"] == "Deutsch" else 1)
++    st.session_state["language"] = (
++        "Deutsch"  # default to German (can default to English as needed)
++    )
++language_choice = st.sidebar.radio(
++    "🌐 Sprache / Language",
++    ("Deutsch", "English"),
++    index=0 if st.session_state["language"] == "Deutsch" else 1,
++)
+ st.session_state["language"] = language_choice
+ 
+ # Run the main wizard interface (UI logic is handled in wizard.py based on selected language)
+ wizard.run_wizard()
+diff --git a/vacalyser/components/__init__.py b/vacalyser/components/__init__.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/vacalyser/components/wizard.py b/vacalyser/components/wizard.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..b9fb2e9d6b6b8db707b542707e5e87786fd7d2d6
+--- /dev/null
++++ b/vacalyser/components/wizard.py
+@@ -0,0 +1,1036 @@
++from __future__ import annotations
++import streamlit as st
++import requests
++from streamlit_sortables import sort_items
++
++# Vacalyser-Module und Utilities importieren
++from vacalyser.state.session_state import initialize_session_state
++from vacalyser.logic.trigger_engine import TriggerEngine, build_default_graph
++from vacalyser.logic.file_tools import extract_text_from_file
++from vacalyser.services.scraping_tools import scrape_company_site
++from vacalyser.utils.text_cleanup import clean_text
++from vacalyser.utils.keys import STEP_KEYS
++from vacalyser.services.vacancy_agent import auto_fill_job_spec
++
++# Session State initialisieren (nur beim ersten Aufruf)
++initialize_session_state()
++
++# UI-Sprache aus zentraler Einstellung übernehmen
++if "language" in st.session_state:
++    st.session_state["lang"] = (
++        "Deutsch" if st.session_state["language"] == "Deutsch" else "English"
++    )
++
++
++def _ensure_engine() -> TriggerEngine:
++    """Initialisiert die TriggerEngine mit Standard-Graph und Prozessoren (einmal pro Session)."""
++    eng: TriggerEngine | None = st.session_state.get("trigger_engine")
++    if eng is None:
++        eng = TriggerEngine()
++        build_default_graph(eng)
++        st.session_state["trigger_engine"] = eng
++    return eng
++
++
++def _clamp_step() -> int:
++    """Begrenzt den aktuellen wizard_step auf einen Wert zwischen 1 und 8."""
++    st.session_state["wizard_step"] = max(1, min(8, _int_from_state("wizard_step", 1)))
++    return st.session_state["wizard_step"]
++
++
++def _int_from_state(key: str, default: int) -> int:
++    """Safely parse an int from session state or return the default."""
++    val = st.session_state.get(key)
++    try:
++        return default if val is None else int(val)
++    except (TypeError, ValueError):
++        return default
++
++
++def fetch_url_text(url: str) -> str:
++    """Holt den Inhalt der gegebenen URL und liefert bereinigten Text zurück."""
++    try:
++        resp = requests.get(url, timeout=10)
++        resp.raise_for_status()
++    except Exception as exc:
++        st.warning(f"Failed to fetch URL: {exc}")
++        return ""
++    content_type = resp.headers.get("content-type", "").lower()
++    if "text/html" in content_type:
++        data = scrape_company_site(url)
++        if isinstance(data, dict):
++            text = (
++                (data.get("title", "") or "")
++                + "\n"
++                + (data.get("description", "") or "")
++            )
++        else:
++            text = str(data)
++    elif "pdf" in content_type:
++        text = extract_text_from_file(resp.content, "file.pdf")
++    elif "officedocument" in content_type or "msword" in content_type:
++        text = extract_text_from_file(resp.content, "file.docx")
++    else:
++        text = resp.text
++    return clean_text(text or "")
++
++
++def match_and_store_keys(raw_text: str) -> None:
++    """Fallback-Parser: extrahiert Felder anhand von vordefinierten Labels im Text."""
++    if not raw_text:
++        return
++    labels = {
++        "job_title": "Job Title:",
++        "company_name": "Company Name:",
++        "brand_name": "Brand Name:",
++        "headquarters_location": "HQ Location:",
++        "company_website": "Company Website:",
++        "date_of_employment_start": "Date of Employment Start:",
++        "job_type": "Job Type:",
++        "contract_type": "Contract Type:",
++        "job_level": "Job Level:",
++        "city": "City",  # "City (Job Location):" manchmal abgekürzt
++        "team_structure": "Team Structure:",
++        "role_description": "Role Description:",
++        "reports_to": "Reports To:",
++        "supervises": "Supervises:",
++        "role_type": "Role Type:",
++        "role_priority_projects": "Role Priority Projects:",
++        "travel_requirements": "Travel Requirements:",
++        "must_have_skills": "Requirements:",
++        "nice_to_have_skills": "Preferred Skills:",
++    }
++    for key, label in labels.items():
++        if label in raw_text:
++            try:
++                # Text direkt nach dem Label bis zum Zeilenende extrahieren
++                value = (
++                    raw_text.split(label, 1)[1].split("\n", 1)[0].strip().rstrip(":;,.")
++                )
++            except IndexError:
++                continue
++            if value:
++                st.session_state[key] = value
++
++
++def display_step_summary(step: int) -> None:
++    """Zeigt eine ausklappbare Zusammenfassung aller bisher ausgefüllten Felder und listet fehlende Felder im aktuellen Schritt auf."""
++    lang = st.session_state.get("lang", "English")
++    filled = {}
++    for s in range(1, step + 1):
++        for field in STEP_KEYS[s]:
++            if field in [
++                "input_url",
++                "uploaded_file",
++                "parsed_data_raw",
++                "source_language",
++            ]:
++                continue
++            val = st.session_state.get(field)
++            if val not in (None, "", []):
++                filled[field] = val
++    missing_fields = [
++        f
++        for f in STEP_KEYS[step]
++        if f not in ["input_url", "uploaded_file", "parsed_data_raw", "source_language"]
++        and not st.session_state.get(f)
++    ]
++    if filled:
++        exp_label = (
++            "Zusammenfassung ausgefüllter Felder"
++            if lang == "Deutsch"
++            else "Summary of Filled Fields"
++        )
++        with st.expander(exp_label, expanded=False):
++            # Gruppiere Zusammenfassung nach Schritten
++            for s in range(1, step + 1):
++                section_fields = [
++                    f
++                    for f in STEP_KEYS[s]
++                    if f
++                    not in [
++                        "input_url",
++                        "uploaded_file",
++                        "parsed_data_raw",
++                        "source_language",
++                    ]
++                ]
++                section_filled = {
++                    k: v for k, v in filled.items() if k in section_fields
++                }
++                if not section_filled:
++                    continue
++                st.markdown(f"**Step {s}:**")
++                for k, v in section_filled.items():
++                    st.write(f"- **{k}**: {v}")
++    if missing_fields:
++        warn_label = (
++            "Noch auszufüllende Felder in diesem Schritt:"
++            if lang == "Deutsch"
++            else "Missing fields in this step:"
++        )
++        st.warning(warn_label + " " + ", ".join(missing_fields))
++
++
++def start_discovery_page():
++    # Schritt 1: Einstieg (Jobtitel/Quelle eingeben)
++    lang = st.session_state.get("lang", "English")
++    if lang == "Deutsch":
++        st.title("🚀 Erstelle die perfekte Stellenbeschreibung")
++        st.subheader("Von der ersten Idee bis zur fertigen Ausschreibung.")
++        intro_text = (
++            "Willkommen bei **RoleCraft**.\n\n"
++            "Starte mit einem Jobtitel oder lade eine Anzeige hoch.\n"
++            "Unser KI-gestützter Wizard analysiert, ergänzt fehlende Infos und führt dich sicher zum perfekten Profil."
++        )
++        btn_job = "➕ Jobtitel eingeben"
++        btn_upload = "📂 PDF / DOCX hochladen"
++    else:
++        st.title("🚀 Create the Perfect Job Description")
++        st.subheader("From the first idea to a fully crafted profile.")
++        intro_text = (
++            "Welcome to **RoleCraft**.\n\n"
++            "Start with a job title or upload an ad.\n"
++            "Our AI-powered wizard analyzes, fills gaps, and guides you seamlessly to a perfect profile."
++        )
++        btn_job = "➕ Enter Job Title"
++        btn_upload = "📂 Upload PDF / DOCX"
++    st.markdown(intro_text)
++    st.header("Vacalyzer – Start Discovery")
++    st.write(
++        "Gib einen Jobtitel ein und entweder eine URL zu einer bestehenden Stellenanzeige oder lade eine Stellenbeschreibung hoch. "
++        "Der Assistent analysiert die Inhalte und füllt relevante Felder automatisch aus."
++        if lang == "Deutsch"
++        else "Enter a job title and either a link to an existing job ad or upload a job description file. "
++        "The wizard will analyze the content and auto-fill relevant fields where possible."
++    )
++    col1, col2 = st.columns(2)
++    with col1:
++        job_title = st.text_input(
++            btn_job,
++            value=st.session_state.get("job_title", ""),
++            placeholder=(
++                "z.B. Senior Data Scientist"
++                if lang == "Deutsch"
++                else "e.g. Senior Data Scientist"
++            ),
++        )
++        if job_title:
++            st.session_state["job_title"] = job_title
++        input_url = st.text_input(
++            (
++                "🔗 Stellenanzeigen-URL (optional)"
++                if lang == "Deutsch"
++                else "🔗 Job Ad URL (optional)"
++            ),
++            value=st.session_state.get("input_url", ""),
++        )
++        if input_url:
++            st.session_state["input_url"] = input_url
++    with col2:
++        uploaded_file = st.file_uploader(btn_upload, type=["pdf", "docx", "txt"])
++        if uploaded_file is not None:
++            file_bytes = uploaded_file.read()
++            raw_text = extract_text_from_file(file_bytes, uploaded_file.name)
++            raw_text = clean_text(raw_text)
++            if raw_text:
++                st.session_state["uploaded_file"] = raw_text
++                st.success(
++                    "✅ Datei hochgeladen und Text extrahiert."
++                    if lang == "Deutsch"
++                    else "✅ File uploaded and text extracted."
++                )
++            else:
++                st.error(
++                    "❌ Konnte den Text aus der Datei nicht extrahieren."
++                    if lang == "Deutsch"
++                    else "❌ Failed to extract text from the uploaded file."
++                )
++    analyze_clicked = st.button(
++        "🔎 Analysieren" if lang == "Deutsch" else "🔎 Analyze Sources"
++    )
++    if analyze_clicked:
++        raw_text = ""
++        if st.session_state.get("uploaded_file"):
++            raw_text = st.session_state["uploaded_file"]
++        elif st.session_state.get("input_url"):
++            raw_text = fetch_url_text(st.session_state["input_url"])
++        if not raw_text:
++            st.warning(
++                "⚠️ Bitte gib eine gültige URL oder lade eine Datei hoch."
++                if lang == "Deutsch"
++                else "⚠️ Please provide a valid URL or upload a file."
++            )
++            return
++        # Sprache der Quelle grob erkennen (Deutsch vs. Englisch)
++        sample = raw_text[:500].lower()
++        if sample.count(" der ") + sample.count(" die ") + sample.count(
++            " und "
++        ) > sample.count(" the "):
++            st.session_state["source_language"] = "Deutsch"
++        else:
++            st.session_state["source_language"] = "English"
++        # Rohtext im Session State speichern & KI-Analyse durchführen
++        st.session_state["parsed_data_raw"] = raw_text
++        try:
++            result = auto_fill_job_spec(
++                input_url=st.session_state.get("input_url", ""),
++                file_bytes=raw_text.encode("utf-8") if raw_text else None,
++                file_name=uploaded_file.name if uploaded_file else "",
++                summary_quality="standard",
++            )
++            if result:
++                # Automatisch ausgefüllte Felder in Session State übernehmen
++                for key, value in result.items():
++                    if key in st.session_state and value not in (None, ""):
++                        if isinstance(value, list):
++                            st.session_state[key] = "\n".join(
++                                str(v) for v in value if v
++                            )
++                        else:
++                            st.session_state[key] = value
++                # TriggerEngine benachrichtigen, damit abhängige Felder berechnet werden
++                for k in result.keys():
++                    _ensure_engine().notify_change(k, st.session_state)
++                st.success(
++                    "🎯 Analyse abgeschlossen! Wichtige Felder wurden automatisch ausgefüllt."
++                    if lang == "Deutsch"
++                    else "🎯 Analysis complete! Key details have been auto-filled."
++                )
++            else:
++                # KI-Parsing lieferte nichts -> Fallback mittels Stichwort-Suche
++                match_and_store_keys(raw_text)
++                st.info(
++                    "⚠️ KI-Analyse nicht verfügbar – wichtige Felder anhand von Schlagworten ausgefüllt."
++                    if lang == "Deutsch"
++                    else "⚠️ AI extraction not available – applied basic extraction for key fields."
++                )
++            st.session_state.setdefault("trace_events", []).append(
++                "Auto-extracted fields from provided job description."
++            )
++        except Exception as e:
++            st.error(
++                f"❌ Analyse fehlgeschlagen: {e}"
++                if lang == "Deutsch"
++                else f"❌ Analysis failed: {e}"
++            )
++
++
++def _handle_static_step(step: int, render_func):
++    """Verarbeitet einen statischen Schritt: Speichert Eingaben und aktualisiert abhängige Felder."""
++    lang = st.session_state.get("lang", "English")
++    render_vals = render_func()
++    # Eingegebene Werte speichern und TriggerEngine benachrichtigen
++    for k, v in render_vals.items():
++        st.session_state[k] = v
++        _ensure_engine().notify_change(k, st.session_state)
++    # Zusammenfassung der bisher ausgefüllten Felder anzeigen
++    display_step_summary(step)
++    # Button zum nächsten Schritt
++    if st.button(
++        "Weiter zu Schritt {}".format(step + 1)
++        if lang == "Deutsch"
++        else "Continue to Step {}".format(step + 1)
++    ):
++        st.session_state["wizard_step"] = step + 1
++
++
++# Schritte 2–7: Formulareingaben
++def render_step2_static():
++    lang = st.session_state.get("lang", "English")
++    st.title(
++        "Schritt 2: Grundlegende Stellen- & Firmendaten"
++        if lang == "Deutsch"
++        else "Step 2: Basic Job & Company Info"
++    )
++    display_step_summary(2)
++    company_name = st.text_input(
++        "Unternehmensname" if lang == "Deutsch" else "Company Name",
++        value=st.session_state.get("company_name", ""),
++        placeholder=(
++            "z.B. Tech Corp GmbH" if lang == "Deutsch" else "e.g. Tech Corp Ltd."
++        ),
++        help=(
++            "Name des einstellenden Unternehmens."
++            if lang == "Deutsch"
++            else "Official name of the hiring company."
++        ),
++    )
++    brand_name = st.text_input(
++        (
++            "Markenname (falls abweichend)"
++            if lang == "Deutsch"
++            else "Brand Name (if different)"
++        ),
++        value=st.session_state.get("brand_name", ""),
++        placeholder=(
++            "z.B. Mutterfirma AG" if lang == "Deutsch" else "e.g. Parent Company Inc."
++        ),
++        help=(
++            "Falls unter einem anderen Marken- oder Firmennamen ausgeschrieben."
++            if lang == "Deutsch"
++            else "If the job is advertised under a different brand or subsidiary name."
++        ),
++    )
++    headquarters_location = st.text_input(
++        "Hauptsitz (Ort)" if lang == "Deutsch" else "Headquarters Location",
++        value=st.session_state.get("headquarters_location", ""),
++        placeholder=(
++            "z.B. Berlin, Deutschland" if lang == "Deutsch" else "e.g. Berlin, Germany"
++        ),
++        help=(
++            "Stadt und Land des Firmensitzes."
++            if lang == "Deutsch"
++            else "City and country of the company's headquarters."
++        ),
++    )
++    company_website = st.text_input(
++        "Webseite des Unternehmens" if lang == "Deutsch" else "Company Website",
++        value=st.session_state.get("company_website", ""),
++        placeholder=(
++            "z.B. https://firma.de" if lang == "Deutsch" else "e.g. https://company.com"
++        ),
++    )
++    date_of_start = st.text_input(
++        "Bevorzugtes Eintrittsdatum" if lang == "Deutsch" else "Preferred Start Date",
++        value=st.session_state.get("date_of_employment_start", ""),
++        placeholder=(
++            "z.B. ab sofort oder 2025-01-15"
++            if lang == "Deutsch"
++            else "e.g. ASAP or 2025-01-15"
++        ),
++    )
++    job_type = st.selectbox(
++        "Art der Stelle" if lang == "Deutsch" else "Job Type",
++        ["Full-Time", "Part-Time", "Internship", "Freelance", "Volunteer", "Other"],
++        index=0,
++    )
++    contract_type = st.selectbox(
++        "Vertragsart" if lang == "Deutsch" else "Contract Type",
++        ["Permanent", "Fixed-Term", "Contract", "Other"],
++        index=0,
++    )
++    job_level = st.selectbox(
++        "Karrierestufe" if lang == "Deutsch" else "Job Level",
++        ["Entry-level", "Mid-level", "Senior", "Director", "C-level", "Other"],
++        index=0,
++    )
++    city = st.text_input(
++        "Dienstort (Stadt)" if lang == "Deutsch" else "City (Job Location)",
++        value=st.session_state.get("city", ""),
++        placeholder="z.B. München" if lang == "Deutsch" else "e.g. London",
++    )
++    team_structure = st.text_area(
++        "Teamstruktur" if lang == "Deutsch" else "Team Structure",
++        value=st.session_state.get("team_structure", ""),
++        placeholder=(
++            "Beschreibe den Teamaufbau, Berichtslinien, etc."
++            if lang == "Deutsch"
++            else "Describe the team setup, reporting hierarchy, etc."
++        ),
++    )
++    return {
++        "company_name": company_name,
++        "brand_name": brand_name,
++        "headquarters_location": headquarters_location,
++        "company_website": company_website,
++        "date_of_employment_start": date_of_start,
++        "job_type": job_type,
++        "contract_type": contract_type,
++        "job_level": job_level,
++        "city": city,
++        "team_structure": team_structure,
++    }
++
++
++def render_step3_static():
++    lang = st.session_state.get("lang", "English")
++    st.title(
++        "Schritt 3: Rollenbeschreibung"
++        if lang == "Deutsch"
++        else "Step 3: Role Definition"
++    )
++    display_step_summary(3)
++    role_description = st.text_area(
++        "Rollenbeschreibung" if lang == "Deutsch" else "Role Description",
++        value=st.session_state.get("role_description", ""),
++        placeholder=(
++            "Kurzer Überblick über die Rolle."
++            if lang == "Deutsch"
++            else "High-level summary of the role."
++        ),
++    )
++    reports_to = st.text_input(
++        "Berichtet an" if lang == "Deutsch" else "Reports To",
++        value=st.session_state.get("reports_to", ""),
++        placeholder=(
++            "Position, an die diese Rolle berichtet"
++            if lang == "Deutsch"
++            else "Position this role reports to"
++        ),
++    )
++    supervises = st.text_area(
++        "Verantwortet (führt)" if lang == "Deutsch" else "Supervises",
++        value=st.session_state.get("supervises", ""),
++        placeholder=(
++            "Liste der Positionen/Teams, für die diese Rolle verantwortlich ist"
++            if lang == "Deutsch"
++            else "List positions or teams this role supervises"
++        ),
++    )
++    role_type = st.selectbox(
++        "Rollentyp" if lang == "Deutsch" else "Role Type",
++        [
++            "Individual Contributor",
++            "Team Lead",
++            "Manager",
++            "Director",
++            "Executive",
++            "Other",
++        ],
++        index=0,
++    )
++    role_priority_projects = st.text_area(
++        "Priorisierte Projekte" if lang == "Deutsch" else "Priority Projects",
++        value=st.session_state.get("role_priority_projects", ""),
++        placeholder=(
++            "Aktuell wichtige Projekte oder Initiativen."
++            if lang == "Deutsch"
++            else "Current key projects or initiatives for this role."
++        ),
++    )
++    travel_requirements = st.text_input(
++        "Reisebereitschaft" if lang == "Deutsch" else "Travel Requirements",
++        value=st.session_state.get("travel_requirements", ""),
++        placeholder=(
++            "z.B. 20% Reisetätigkeit"
++            if lang == "Deutsch"
++            else "e.g. Up to 20% travel required"
++        ),
++    )
++    return {
++        "role_description": role_description,
++        "reports_to": reports_to,
++        "supervises": supervises,
++        "role_type": role_type,
++        "role_priority_projects": role_priority_projects,
++        "travel_requirements": travel_requirements,
++    }
++
++
++def render_step4_static():
++    lang = st.session_state.get("lang", "English")
++    st.title(
++        "Schritt 4: Aufgaben & Verantwortlichkeiten"
++        if lang == "Deutsch"
++        else "Step 4: Tasks & Responsibilities"
++    )
++    display_step_summary(4)
++    task_list = st.text_area(
++        "Aufgabenliste" if lang == "Deutsch" else "Task List",
++        value=st.session_state.get("task_list", ""),
++        placeholder=(
++            "Liste der Kernaufgaben oder Zuständigkeiten."
++            if lang == "Deutsch"
++            else "List of key tasks or responsibilities."
++        ),
++    )
++    key_responsibilities = st.text_area(
++        "Hauptverantwortlichkeiten" if lang == "Deutsch" else "Key Responsibilities",
++        value=st.session_state.get("key_responsibilities", ""),
++        placeholder=(
++            "z.B. Projektleitung, Teamkoordination"
++            if lang == "Deutsch"
++            else "e.g. Project management, team coordination"
++        ),
++    )
++    return {"task_list": task_list, "key_responsibilities": key_responsibilities}
++
++
++def render_step5_static():
++    lang = st.session_state.get("lang", "English")
++    st.title(
++        "Schritt 5: Fähigkeiten & Kompetenzen"
++        if lang == "Deutsch"
++        else "Step 5: Skills & Competencies"
++    )
++    display_step_summary(5)
++
++    st.write(
++        "Ziehe deine eingegebenen Fähigkeiten einfach zwischen die Spalten"
++        if lang == "Deutsch"
++        else "Drag your skills between the columns below."
++    )
++
++    new_skill = st.text_input(
++        "Neuen Skill hinzufügen" if lang == "Deutsch" else "Add new skill",
++        key="skill_input",
++    )
++    add_to_must = st.checkbox(
++        "Zu Muss" if lang == "Deutsch" else "To Must-Have",
++        value=True,
++        key="add_to_must",
++    )
++    if (
++        st.button("Skill speichern" if lang == "Deutsch" else "Save skill")
++        and new_skill
++    ):
++        target = "must_have_skills_list" if add_to_must else "nice_to_have_skills_list"
++        st.session_state.setdefault(target, []).append(new_skill)
++        st.session_state["skill_input"] = ""
++
++    must_list = st.session_state.get("must_have_skills_list", [])
++    nice_list = st.session_state.get("nice_to_have_skills_list", [])
++
++    sorted_lists = sort_items(
++        [
++            {
++                "header": "Muss" if lang == "Deutsch" else "Must-Have",
++                "items": must_list,
++            },
++            {"header": "Nice-to-Have", "items": nice_list},
++        ],
++        multi_containers=True,
++    )
++
++    st.session_state["must_have_skills_list"] = sorted_lists[0]["items"]
++    st.session_state["nice_to_have_skills_list"] = sorted_lists[1]["items"]
++
++    must_have_skills = "\n".join(st.session_state["must_have_skills_list"])
++    nice_to_have_skills = "\n".join(st.session_state["nice_to_have_skills_list"])
++    certifications_required = st.text_input(
++        "Erforderliche Zertifikate" if lang == "Deutsch" else "Certifications Required",
++        value=st.session_state.get("certifications_required", ""),
++        placeholder="z.B. PMP, CFA" if lang == "Deutsch" else "e.g. PMP, CFA",
++    )
++    language_requirements = st.text_input(
++        "Sprachkenntnisse" if lang == "Deutsch" else "Language Requirements",
++        value=st.session_state.get("language_requirements", ""),
++        placeholder=(
++            "z.B. Fließend Deutsch und Englisch"
++            if lang == "Deutsch"
++            else "e.g. Fluent in German and English"
++        ),
++    )
++    return {
++        "must_have_skills": must_have_skills,
++        "nice_to_have_skills": nice_to_have_skills,
++        "certifications_required": certifications_required,
++        "language_requirements": language_requirements,
++    }
++
++
++def render_step6_static():
++    lang = st.session_state.get("lang", "English")
++    st.title(
++        "Schritt 6: Vergütung & Benefits"
++        if lang == "Deutsch"
++        else "Step 6: Compensation & Benefits"
++    )
++    display_step_summary(6)
++    salary_range = st.text_input(
++        "Gehaltsrahmen" if lang == "Deutsch" else "Salary Range",
++        value=st.session_state.get("salary_range", ""),
++        placeholder=(
++            "z.B. 50.000 – 60.000 EUR"
++            if lang == "Deutsch"
++            else "e.g. 50,000 – 60,000 EUR"
++        ),
++    )
++    currency = st.text_input(
++        "Währung" if lang == "Deutsch" else "Currency",
++        value=st.session_state.get("currency", ""),
++        placeholder="z.B. EUR" if lang == "Deutsch" else "e.g. EUR",
++    )
++    pay_frequency = st.text_input(
++        "Zahlungsintervall" if lang == "Deutsch" else "Pay Frequency",
++        value=st.session_state.get("pay_frequency", ""),
++        placeholder="z.B. jährlich" if lang == "Deutsch" else "e.g. annual",
++    )
++    bonus_scheme = st.text_input(
++        "Bonusregelung" if lang == "Deutsch" else "Bonus Scheme",
++        value=st.session_state.get("bonus_scheme", ""),
++        placeholder=(
++            "z.B. Teilnahme am jährlichen Bonusprogramm"
++            if lang == "Deutsch"
++            else "e.g. Eligible for annual performance bonus"
++        ),
++    )
++    commission_structure = st.text_input(
++        "Provisionsmodell" if lang == "Deutsch" else "Commission Structure",
++        value=st.session_state.get("commission_structure", ""),
++        placeholder=(
++            "z.B. Umsatzabhängige Provision"
++            if lang == "Deutsch"
++            else "e.g. Commission based on sales performance"
++        ),
++    )
++    vacation_days = st.slider(
++        "Urlaubstage" if lang == "Deutsch" else "Vacation Days",
++        20,
++        40,
++        _int_from_state("vacation_days", 30),
++    )
++    vacation_days_str = str(vacation_days)
++    remote_possible = st.checkbox(
++        "Remote-Arbeit möglich?" if lang == "Deutsch" else "Remote work possible?",
++        value=str(st.session_state.get("remote_work_policy", "")).lower()
++        in ("ja", "yes", "true"),
++    )
++    remote_work_policy = (
++        "Ja"
++        if remote_possible and lang == "Deutsch"
++        else ("Yes" if remote_possible else "No")
++    )
++    flexible_hours = st.text_input(
++        "Flexible Arbeitszeiten" if lang == "Deutsch" else "Flexible Hours",
++        value=st.session_state.get("flexible_hours", ""),
++        placeholder=(
++            "z.B. Ja (Gleitzeit möglich)"
++            if lang == "Deutsch"
++            else "e.g. Yes (flexible schedule)"
++        ),
++    )
++    relocation_possible = st.checkbox(
++        "Umzugsunterstützung?" if lang == "Deutsch" else "Relocation assistance?",
++        value=str(st.session_state.get("relocation_assistance", "")).lower()
++        in ("ja", "yes", "true"),
++    )
++    relocation_assistance = (
++        "Ja"
++        if relocation_possible and lang == "Deutsch"
++        else ("Yes" if relocation_possible else "No")
++    )
++    return {
++        "salary_range": salary_range,
++        "currency": currency,
++        "pay_frequency": pay_frequency,
++        "bonus_scheme": bonus_scheme,
++        "commission_structure": commission_structure,
++        "vacation_days": vacation_days_str,
++        "remote_work_policy": remote_work_policy,
++        "flexible_hours": flexible_hours,
++        "relocation_assistance": relocation_assistance,
++    }
++
++
++def render_step7_static():
++    lang = st.session_state.get("lang", "English")
++    st.title(
++        "Schritt 7: Recruiting-Prozess"
++        if lang == "Deutsch"
++        else "Step 7: Recruitment Process"
++    )
++    display_step_summary(7)
++    recruitment_contact_email = st.text_input(
++        "Kontakt-Email" if lang == "Deutsch" else "Recruitment Contact Email",
++        value=st.session_state.get("recruitment_contact_email", ""),
++        placeholder="z.B. hr@firma.de" if lang == "Deutsch" else "e.g. hr@company.com",
++    )
++    recruitment_steps = st.text_area(
++        "Ablauf der Bewerbungsrunden" if lang == "Deutsch" else "Recruitment Steps",
++        value=st.session_state.get("recruitment_steps", ""),
++        placeholder=(
++            "Beschreibung des Auswahlverfahrens"
++            if lang == "Deutsch"
++            else "Description of the interview/application steps"
++        ),
++    )
++    recruitment_timeline = st.text_input(
++        "Geplanter Zeitrahmen" if lang == "Deutsch" else "Recruitment Timeline",
++        value=st.session_state.get("recruitment_timeline", ""),
++        placeholder=(
++            "z.B. 6 Wochen bis zur Einstellung"
++            if lang == "Deutsch"
++            else "e.g. 6 weeks from first interview to offer"
++        ),
++    )
++    number_of_interviews = st.text_input(
++        "Anzahl der Interviews" if lang == "Deutsch" else "Number of Interviews",
++        value=st.session_state.get("number_of_interviews", ""),
++        placeholder="z.B. 3 Runden" if lang == "Deutsch" else "e.g. 3 rounds",
++    )
++    interview_format = st.text_input(
++        "Interview-Format" if lang == "Deutsch" else "Interview Format",
++        value=st.session_state.get("interview_format", ""),
++        placeholder=(
++            "z.B. Videokonferenz" if lang == "Deutsch" else "e.g. Video conference"
++        ),
++    )
++    assessment_tests = st.text_input(
++        "Einstellungstests" if lang == "Deutsch" else "Assessment Tests",
++        value=st.session_state.get("assessment_tests", ""),
++        placeholder=(
++            "z.B. Programmieraufgabe, Präsentation"
++            if lang == "Deutsch"
++            else "e.g. Coding challenge, presentation"
++        ),
++    )
++    onboarding_process_overview = st.text_area(
++        "Onboarding-Prozess" if lang == "Deutsch" else "Onboarding Process Overview",
++        value=st.session_state.get("onboarding_process_overview", ""),
++        placeholder=(
++            "Kurze Beschreibung des Onboarding-Prozesses"
++            if lang == "Deutsch"
++            else "Brief description of the onboarding process"
++        ),
++    )
++    recruitment_contact_phone = st.text_input(
++        "Kontakt-Telefon" if lang == "Deutsch" else "Recruitment Contact Phone",
++        value=st.session_state.get("recruitment_contact_phone", ""),
++        placeholder="z.B. +49 170 1234567",
++    )
++    application_instructions = st.text_area(
++        "Hinweise zur Bewerbung" if lang == "Deutsch" else "Application Instructions",
++        value=st.session_state.get("application_instructions", ""),
++        placeholder=(
++            "z.B. Ansprechpartner und benötigte Unterlagen"
++            if lang == "Deutsch"
++            else "e.g. Contact person and required documents"
++        ),
++    )
++    return {
++        "recruitment_contact_email": recruitment_contact_email,
++        "recruitment_steps": recruitment_steps,
++        "recruitment_timeline": recruitment_timeline,
++        "number_of_interviews": number_of_interviews,
++        "interview_format": interview_format,
++        "assessment_tests": assessment_tests,
++        "onboarding_process_overview": onboarding_process_overview,
++        "recruitment_contact_phone": recruitment_contact_phone,
++        "application_instructions": application_instructions,
++    }
++
++
++def render_step8():
++    lang = st.session_state.get("lang", "English")
++    st.title(
++        "Schritt 8: Weitere Angaben & Zusammenfassung"
++        if lang == "Deutsch"
++        else "Step 8: Additional Information & Summary"
++    )
++    display_step_summary(8)
++    st.subheader(
++        "Abschließende Einstellungen" if lang == "Deutsch" else "Final Settings"
++    )
++    ad_seniority_tone = st.text_input(
++        "Ton/Stil der Anzeige" if lang == "Deutsch" else "Ad Tone/Style",
++        value=st.session_state.get("ad_seniority_tone", ""),
++        placeholder=(
++            "z.B. Professionell und förmlich"
++            if lang == "Deutsch"
++            else "e.g. Professional and formal"
++        ),
++        help=(
++            "Gewünschter Tonfall/Schreibstil der Anzeige (z.B. locker, formell)."
++            if lang == "Deutsch"
++            else "Desired tone or style for the job ad (e.g. formal, casual, friendly)."
++        ),
++    )
++    st.session_state["ad_seniority_tone"] = ad_seniority_tone
++    ad_length_preference = st.text_input(
++        (
++            "Präferenz der Anzeigentextlänge"
++            if lang == "Deutsch"
++            else "Ad Length Preference"
++        ),
++        value=st.session_state.get("ad_length_preference", ""),
++        placeholder=(
++            "z.B. Kurz und prägnant" if lang == "Deutsch" else "e.g. Short and concise"
++        ),
++        help=(
++            "Präferenz für die Länge der Stellenbeschreibung (knapp vs. ausführlich)."
++            if lang == "Deutsch"
++            else "Preference for the length/detail level of the job description (concise vs. detailed)."
++        ),
++    )
++    st.session_state["ad_length_preference"] = ad_length_preference
++    # Sprache der finalen Anzeige auswählen (Deutsch/Englisch)
++    language_options = (
++        ["Deutsch", "Englisch"] if lang == "Deutsch" else ["German", "English"]
++    )
++    default_idx = (
++        0
++        if st.session_state.get("language_of_ad", "English") in ["German", "Deutsch"]
++        else 1
++    )
++    selected_lang = st.selectbox(
++        "Sprache der Ausschreibung" if lang == "Deutsch" else "Language of Ad",
++        options=language_options,
++        index=(0 if default_idx == 0 else 1),
++    )
++    st.session_state["language_of_ad"] = (
++        "German" if selected_lang in ["German", "Deutsch"] else "English"
++    )
++    translation_required = st.checkbox(
++        (
++            "Übersetzung der Anzeige benötigt?"
++            if lang == "Deutsch"
++            else "Translation required?"
++        ),
++        value=bool(st.session_state.get("translation_required", False)),
++    )
++    st.session_state["translation_required"] = translation_required
++    desired_publication_channels = st.text_input(
++        (
++            "Gewünschte Veröffentlichungskanäle"
++            if lang == "Deutsch"
++            else "Desired Publication Channels"
++        ),
++        value=st.session_state.get("desired_publication_channels", ""),
++        placeholder=(
++            "z.B. LinkedIn, Firmenwebsite"
++            if lang == "Deutsch"
++            else "e.g. LinkedIn, Company careers page"
++        ),
++        help=(
++            "Kanäle/Plattformen, auf denen die Stelle veröffentlicht werden soll."
++            if lang == "Deutsch"
++            else "Channels where the job ad will be posted (job boards, company site, etc)."
++        ),
++    )
++    st.session_state["desired_publication_channels"] = desired_publication_channels
++    employer_branding_elements = st.text_input(
++        (
++            "Employer-Branding-Elemente"
++            if lang == "Deutsch"
++            else "Employer Branding Elements"
++        ),
++        value=st.session_state.get("employer_branding_elements", ""),
++        placeholder=(
++            "z.B. Unternehmensmission, Werte"
++            if lang == "Deutsch"
++            else "e.g. Company mission statement, core values"
++        ),
++        help=(
++            "Besondere Merkmale der Arbeitgebermarke (Mission, Werte, Slogan, etc.)."
++            if lang == "Deutsch"
++            else "Company branding elements to include (mission, values, tagline, etc.)."
++        ),
++    )
++    st.session_state["employer_branding_elements"] = employer_branding_elements
++    diversity_inclusion_statement = st.text_area(
++        "Diversity & Inclusion Statement",
++        value=st.session_state.get("diversity_inclusion_statement", ""),
++        placeholder=(
++            "Optionale Passage zu Diversität und Inklusion"
++            if lang == "Deutsch"
++            else "Optional statement on diversity and inclusion"
++        ),
++    )
++    st.session_state["diversity_inclusion_statement"] = diversity_inclusion_statement
++    legal_disclaimers = st.text_area(
++        "Rechtliche Hinweise" if lang == "Deutsch" else "Legal Disclaimers",
++        value=st.session_state.get("legal_disclaimers", ""),
++        placeholder=(
++            "Rechtliche Hinweise oder Disclaimer"
++            if lang == "Deutsch"
++            else "Any legal disclaimers or notices"
++        ),
++    )
++    st.session_state["legal_disclaimers"] = legal_disclaimers
++    company_awards = st.text_input(
++        "Auszeichnungen des Unternehmens" if lang == "Deutsch" else "Company Awards",
++        value=st.session_state.get("company_awards", ""),
++        placeholder=(
++            "z.B. Top-Arbeitgeber 2023"
++            if lang == "Deutsch"
++            else "e.g. Best Employer 2023"
++        ),
++    )
++    st.session_state["company_awards"] = company_awards
++    social_media_links = st.text_input(
++        "Social-Media-Links",
++        value=st.session_state.get("social_media_links", ""),
++        placeholder=(
++            "z.B. LinkedIn, XING, Twitter"
++            if lang == "Deutsch"
++            else "e.g. LinkedIn, Twitter profiles"
++        ),
++    )
++    st.session_state["social_media_links"] = social_media_links
++    video_introduction_option = st.text_input(
++        (
++            "Option für Videoeinleitung"
++            if lang == "Deutsch"
++            else "Video Introduction Option"
++        ),
++        value=st.session_state.get("video_introduction_option", ""),
++        placeholder=(
++            "z.B. Link zu einem Company-Video"
++            if lang == "Deutsch"
++            else "e.g. Link to a company introduction video"
++        ),
++    )
++    st.session_state["video_introduction_option"] = video_introduction_option
++    internal_job_id = st.text_input(
++        "Interne Job-ID",
++        value=st.session_state.get("internal_job_id", ""),
++        placeholder="Interne Referenznummer der Stelle",
++    )
++    st.session_state["internal_job_id"] = internal_job_id
++    deadline_urgency = st.text_input(
++        (
++            "Bewerbungsfrist/Dringlichkeit"
++            if lang == "Deutsch"
++            else "Application Deadline/Urgency"
++        ),
++        value=st.session_state.get("deadline_urgency", ""),
++        placeholder=(
++            "z.B. Einstellung bis Q4 angepeilt"
++            if lang == "Deutsch"
++            else "e.g. Target to hire by Q4"
++        ),
++    )
++    st.session_state["deadline_urgency"] = deadline_urgency
++    comments_internal = st.text_area(
++        "Interne Kommentare" if lang == "Deutsch" else "Internal Comments",
++        value=st.session_state.get("comments_internal", ""),
++        placeholder="Nur intern: Notizen oder Kommentare zum Profil",
++    )
++    st.session_state["comments_internal"] = comments_internal
++    st.success(
++        "🎉 Alle Schritte abgeschlossen! Überprüfe die Angaben und erstelle nun die Stellenanzeige."
++        if lang == "Deutsch"
++        else "🎉 All steps completed! Review all inputs and proceed to generate the job description."
++    )
++
++
++def run_wizard():
++    """Haupt-Einstiegspunkt zum Rendern des Wizards basierend auf dem aktuellen Schritt."""
++    step = _clamp_step()
++    _ensure_engine()
++    if step == 1:
++        start_discovery_page()
++    elif step == 2:
++        _handle_static_step(2, render_step2_static)
++    elif step == 3:
++        _handle_static_step(3, render_step3_static)
++    elif step == 4:
++        _handle_static_step(4, render_step4_static)
++    elif step == 5:
++        _handle_static_step(5, render_step5_static)
++    elif step == 6:
++        _handle_static_step(6, render_step6_static)
++    elif step == 7:
++        _handle_static_step(7, render_step7_static)
++    elif step == 8:
++        render_step8()
++    _nav(step)
++
++
++def _nav(step: int):
++    """Navigations-Buttons für Weiter/Zurück je nach aktuellem Schritt anzeigen."""
++    lang = st.session_state.get("lang", "English")
++    if step < 8:
++        st.button(
++            "Weiter" if lang == "Deutsch" else "Next",
++            on_click=lambda: st.session_state.update({"wizard_step": step + 1}),
++            key=f"next_{step}",
++        )
++    if step > 1:
++        st.button(
++            "Zurück" if lang == "Deutsch" else "Back",
++            on_click=lambda: st.session_state.update({"wizard_step": step - 1}),
++            key=f"back_{step}",
++        )
+diff --git a/vacalyser/logic/__init__.py b/vacalyser/logic/__init__.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/src/tools/file_tools.py b/vacalyser/logic/file_tools.py
+similarity index 95%
+rename from src/tools/file_tools.py
+rename to vacalyser/logic/file_tools.py
+index 2e0abda761c9acc90e3facffd402caac5c2eaa72..de5fcdd17beb3409c02fad5436a55f1e7e764076 100644
+--- a/src/tools/file_tools.py
++++ b/vacalyser/logic/file_tools.py
+@@ -1,118 +1,123 @@
+-"""
+-src/tools/file_tools.py
+------------------------
++"""Utilities to extract text from uploaded job-ad files.
++
++This module was formerly located at `src/tools/file_tools.py`.
++
+ 
+ Robuste Text-Extraktion aus hochgeladenen Stellenanzeigen
+ (PDF, DOCX, TXT oder generische Binärdatei).
+ 
+ • Dekoriert mit @tool  →  kann direkt im OpenAI-Function-Calling
+   eingesetzt werden (siehe vacancy_agent.py).
+ • Erkennt Dateityp primär über Dateiendung, notfalls über einfache
+   Magic-Header-Checks.
+ • Verwendet PyMuPDF (fitz) für PDF-Seiten, python-docx für DOCX.
+ • Fällt andernfalls auf UTF-8-/Latin-1-Decode zurück.
+ • Liefert immer einen **reinen UTF-8-String** (keine Zeilen mit
+   mehr als 2 aufeinander­folgenden Leerzeichen).
+ 
+ Benötigte Dependencies (stehen bereits in requirements.txt):
+     pymupdf>=1.25.2
+     python-docx>=1.1
+ """
+ 
+ from __future__ import annotations
+ 
+ import io
+ import logging
+ import os
+ import re
+ import zipfile
+ from typing import Literal
+ 
+ import fitz  # PyMuPDF
+ from docx import Document
+ 
+-from src.utils.text_cleanup import clean_text
++from vacalyser.utils.text_cleanup import clean_text
+ 
+ # Optionaler Decorator (funktioniert auch ohne tool_registry)
+ try:
+-    from src.utils.tool_registry import tool
++    from vacalyser.utils.tool_registry import tool
+ except (ImportError, ModuleNotFoundError):  # Fallback-Decorator
++
+     def tool(_func=None, **_kwargs):  # type: ignore
+         def decorator(func):
+             return func
++
+         return decorator if _func is None else decorator(_func)
+ 
++
+ logger = logging.getLogger(__name__)
+ 
+ # --- interne Hilfsfunktionen -------------------------------------------------
+ 
+ 
+ def _ext(filename: str) -> str:
+     """liefert Dateiendung (ohne Punkt) in Kleinbuchstaben."""
+     return os.path.splitext(filename)[1].lower().lstrip(".")
+ 
+ 
+ def _extract_text_pdf(data: bytes) -> str:
+     """Extrahiert Text aus PDF-Bytes mittels PyMuPDF."""
+     text_parts: list[str] = []
+     with fitz.open(stream=data, filetype="pdf") as doc:
+         for page in doc:
+             text_parts.append(page.get_text().strip())
+     return "\n".join(text_parts)
+ 
+ 
+ def _extract_text_docx(data: bytes) -> str:
+     """Extrahiert Text aus DOCX-Bytes ohne Zwischenspeichern auf Platte."""
+     # python-docx erwartet einen Dateipfad oder eine Datei-ähnliche BinaryIO
+     with io.BytesIO(data) as buf:
+         doc = Document(buf)
+         text_parts = [p.text for p in doc.paragraphs if p.text]
+     return "\n".join(text_parts)
+ 
+ 
+ def _extract_text_zip_plain(data: bytes) -> str | None:
+     """
+     Versucht, aus ZIP-Containern (z. B. OOXML) Klartext-XML zu extrahieren,
+     falls python-docx nicht verfügbar ist.
+     """
+     try:
+         with zipfile.ZipFile(io.BytesIO(data)) as zf:
+             # Suche «word/document.xml»
+             for name in zf.namelist():
+                 if name.endswith("document.xml"):
+                     xml_bytes = zf.read(name)
+                     # entferne rudimentär XML-Tags
+                     xml_text = re.sub(rb"<[^>]+>", b"\n", xml_bytes)
+                     return xml_text.decode("utf-8", errors="ignore")
+     except Exception:
+         pass
+     return None
+ 
+ 
+ # --- öffentliches Tool -------------------------------------------------------
+ 
++
+ @tool(
+     name="extract_text_from_file",
+     description=(
+         "Extracts readable UTF-8 text from an uploaded file (job ad). "
+         "Supports PDF, DOCX and plain text. "
+         "Returns a cleaned text block with maximal 2 consecutive line breaks."
+     ),
+     return_type="string",
+ )
+ def extract_text_from_file(
+     file_content: bytes,
+     filename: str,
+     *,
+     preferred_language: Literal["auto", "de", "en"] = "auto",
+ ) -> str:
+     """
+     Parameters
+     ----------
+     file_content : bytes
+         Die rohen Byte-Daten der Datei.
+     filename : str
+         Ursprünglicher Dateiname (nur für Endungs-Erkennung).
+     preferred_language : {'auto', 'de', 'en'}, default='auto'
+         Wird nicht aktiv gefiltert, kann aber in Zukunft für OCR/Language
+         Detection genutzt werden.
+diff --git a/src/logic/processors.py b/vacalyser/logic/processors.py
+similarity index 91%
+rename from src/logic/processors.py
+rename to vacalyser/logic/processors.py
+index fa99d629c3a0147b18a760c76b1d8b038b2ffb4e..dea63bbe9cdf4e9e54b30a887ea9fdfa819a63cd 100644
+--- a/src/logic/processors.py
++++ b/vacalyser/logic/processors.py
+@@ -1,177 +1,201 @@
+ # processors.py
+ # ─────────────────────────────────────────────────────────────────────────────
+ """Functions to auto-update wizard fields using AI suggestions or logic, and registration of processors."""
+ 
+ from __future__ import annotations
+ from typing import Any
+ import logging
+ 
+-from src.logic.trigger_engine import TriggerEngine
+-# Update import path to reflect new module location under utils
+-from src.utils.llm_utils import call_with_retry, openai
++from vacalyser.logic.trigger_engine import TriggerEngine
++from vacalyser.utils.llm_utils import call_with_retry, openai
+ 
+ # Use a fast model for suggestions
+ _SUGGESTION_MODEL = "gpt-3.5-turbo"
+ 
++
+ def update_task_list(state: dict[str, Any]) -> None:
+     """Auto-generate a general task list from the job title (and industry)."""
+     if state.get("task_list"):
+         return  # already specified by user
+     role = state.get("job_title", "") or state.get("role_description", "")
+     industry = state.get("industry_sector", "") or state.get("industry_experience", "")
+     if not role:
+         return  # no context to generate tasks
+     prompt = f"List 5 key tasks or responsibilities for a {role}"
+     if industry:
+         prompt += f" in the {industry} industry"
+     prompt += ".\n- "
+     try:
+         response = call_with_retry(
+             openai.ChatCompletion.create,
+             model=_SUGGESTION_MODEL,
+             messages=[{"role": "user", "content": prompt}],
+             temperature=0.3,
+             max_tokens=100,
+         )
+         tasks_text = response.choices[0].message.content.strip()
+     except Exception as e:
+         logging.error(f"Task list suggestion failed: {e}")
+         return
+     if tasks_text:
+         state["task_list"] = tasks_text
+ 
++
+ def update_must_have_skills(state: dict[str, Any]) -> None:
+     """Auto-generate must-have skills based on the role (and tasks)."""
+     if state.get("must_have_skills"):
+         return
+     if not state.get("job_title") and not state.get("task_list"):
+         return
+     role_desc = state.get("job_title", "this role")
+     tasks_info = state.get("task_list", "")
+     prompt = f"List 5 must-have skills or qualifications for {role_desc}."
+     if tasks_info:
+         prompt += f" Key tasks: {tasks_info}"
+     prompt += "\n- "
+     try:
+         response = call_with_retry(
+             openai.ChatCompletion.create,
+             model=_SUGGESTION_MODEL,
+             messages=[{"role": "user", "content": prompt}],
+             temperature=0.3,
+             max_tokens=100,
+         )
+         skills_text = response.choices[0].message.content.strip()
+     except Exception as e:
+         logging.error(f"Must-have skills suggestion failed: {e}")
+         return
+     if skills_text:
+         state["must_have_skills"] = skills_text
+ 
++
+ def update_nice_to_have_skills(state: dict[str, Any]) -> None:
+     """Auto-generate nice-to-have skills complementing the must-haves."""
+     if state.get("nice_to_have_skills"):
+         return
+     must = state.get("must_have_skills", "")
+     if not must:
+         return
+     role_desc = state.get("job_title", "this role")
+     prompt = f"List 3 nice-to-have skills for {role_desc} (additional beneficial skills beyond the must-haves)."
+     if must:
+         prompt += f" Must-have skills already listed: {must}"
+     prompt += "\n- "
+     try:
+         response = call_with_retry(
+             openai.ChatCompletion.create,
+             model=_SUGGESTION_MODEL,
+             messages=[{"role": "user", "content": prompt}],
+             temperature=0.3,
+             max_tokens=60,
+         )
+         extra_skills = response.choices[0].message.content.strip()
+     except Exception as e:
+         logging.error(f"Nice-to-have skills suggestion failed: {e}")
+         return
+     if extra_skills:
+         state["nice_to_have_skills"] = extra_skills
+ 
++
+ def update_salary_range(state: dict[str, Any]) -> None:
+     """Estimate a realistic salary range (EUR) based on role, location, tasks, etc."""
+     current = state.get("salary_range", "")
+     if current and str(current).strip().lower() not in {"", "competitive"}:
+         return  # already set to a specific range
+-    role_desc = state.get("job_title", "") or state.get("role_description", "") or "this position"
++    role_desc = (
++        state.get("job_title", "")
++        or state.get("role_description", "")
++        or "this position"
++    )
+     city = state.get("city", "N/A")
+     tasks = state.get("task_list", "-")
+     skills = state.get("must_have_skills", "-")
+     prompt = (
+         "Estimate a fair annual salary range in EUR for the following position in the given city.\n"
+         f"Job title: {role_desc}\nCity: {city}\nKey tasks: {tasks}\nMust-have skills: {skills}\n"
+         'Answer only in the format "MIN – MAX EUR".'
+     )
+     try:
+         response = call_with_retry(
+             openai.ChatCompletion.create,
+             model=_SUGGESTION_MODEL,
+             messages=[
+                 {"role": "system", "content": "You are a labour-market analyst."},
+                 {"role": "user", "content": prompt},
+             ],
+             temperature=0.2,
+             max_tokens=40,
+         )
+         result = response.choices[0].message.content.strip()
+     except Exception as e:
+         logging.error(f"Salary range estimation failed: {e}")
+         return
+     if result:
+         state["salary_range"] = result
+ 
++
+ def update_publication_channels(state: dict[str, Any]) -> None:
+     """Set recommended publication channels based on remote work policy."""
+     raw_policy = state.get("remote_work_policy", "")
+     if isinstance(raw_policy, (list, tuple)):
+         remote = " ".join(str(v).lower() for v in raw_policy)
+     else:
+         remote = str(raw_policy).lower()
+     if remote in {"hybrid", "full remote"}:
+         state["desired_publication_channels"] = "LinkedIn Remote Jobs; WeWorkRemotely"
+ 
++
+ def update_bonus_scheme(state: dict[str, Any]) -> None:
+     """Suggest a bonus scheme for mid-to-senior level roles."""
+     if state.get("bonus_scheme"):
+         return
+     level = str(state.get("job_level", "")).lower()
+     if level in {"mid-level", "senior", "director", "c-level", "executive"}:
+         state["bonus_scheme"] = "Eligible for an annual performance bonus."
+ 
++
+ def update_commission_structure(state: dict[str, Any]) -> None:
+     """Suggest a commission structure for sales-related roles."""
+     if state.get("commission_structure"):
+         return
+     title = str(state.get("job_title", "")).lower()
+-    if any(term in title for term in ("sales", "business development", "account executive", "account manager")):
++    if any(
++        term in title
++        for term in (
++            "sales",
++            "business development",
++            "account executive",
++            "account manager",
++        )
++    ):
+         state["commission_structure"] = "Commission based on sales performance."
+ 
++
+ def update_translation_required(state: dict[str, Any]) -> None:
+     """Determine if a translation is needed based on ad language vs required languages."""
+     if not state.get("language_requirements"):
+         return
+     lang_req = state["language_requirements"].strip()
+     ad_lang = state.get("language_of_ad", "").strip() or "English"
+     # If the ad's language is not among the required languages, translation is likely needed
+-    required_languages = {lang.strip().lower() for lang in lang_req.split(",") if lang.strip()}
++    required_languages = {
++        lang.strip().lower() for lang in lang_req.split(",") if lang.strip()
++    }
+     if ad_lang.lower() and ad_lang.lower() not in required_languages:
+         state["translation_required"] = "Yes"
+     else:
+         state["translation_required"] = "No"
+ 
++
+ def register_all_processors(engine: TriggerEngine) -> None:
+     """Register all processor functions with the TriggerEngine."""
+     engine.register_processor("task_list", update_task_list)
+     engine.register_processor("must_have_skills", update_must_have_skills)
+     engine.register_processor("nice_to_have_skills", update_nice_to_have_skills)
+     engine.register_processor("salary_range", update_salary_range)
+-    engine.register_processor("desired_publication_channels", update_publication_channels)
++    engine.register_processor(
++        "desired_publication_channels", update_publication_channels
++    )
+     engine.register_processor("bonus_scheme", update_bonus_scheme)
+     engine.register_processor("commission_structure", update_commission_structure)
+     engine.register_processor("translation_required", update_translation_required)
+diff --git a/src/logic/trigger_engine.py b/vacalyser/logic/trigger_engine.py
+similarity index 88%
+rename from src/logic/trigger_engine.py
+rename to vacalyser/logic/trigger_engine.py
+index b917f5bedc0a23def376ab4e70cc21a9252a01d3..1387516b22570a92bf997758f9884340ebcf5bda 100644
+--- a/src/logic/trigger_engine.py
++++ b/vacalyser/logic/trigger_engine.py
+@@ -1,82 +1,87 @@
+ from __future__ import annotations
+ from typing import Callable, Iterable, Set
+ import networkx as nx
+ 
+ __all__ = ["TriggerEngine", "build_default_graph"]
+ 
++
+ class TriggerEngine:
+     """DAG zur Verwaltung von Feldabhängigkeiten und zugehörigen Verarbeitungsfunktionen."""
++
+     def __init__(self) -> None:
+         self.graph: nx.DiGraph = nx.DiGraph()
+         self._processors: dict[str, Callable[[dict], None]] = {}
+ 
+     def register_node(self, key: str) -> None:
+         if key not in self.graph:
+             self.graph.add_node(key)
+ 
+     def register_dependency(self, source: str, target: str) -> None:
+         """Deklariert, dass *target* von *source* abhängt (Kante source→target)."""
+         self.register_node(source)
+         self.register_node(target)
+         self.graph.add_edge(source, target)
+ 
+     def register_dependencies(self, pairs: Iterable[tuple[str, str]]) -> None:
+         for src, tgt in pairs:
+             self.register_dependency(src, tgt)
+ 
+     def register_processor(self, key: str, func: Callable[[dict], None]) -> None:
+         """Registriert eine Verarbeitungsfunktion, die ausgeführt wird, wenn *key* neu berechnet werden muss."""
+         self._processors[key] = func
+ 
+     def notify_change(self, updated_key: str, state: dict) -> None:
+         """Benachrichtigt die Engine, dass sich *updated_key* geändert hat, und führt alle abhängigen Verarbeiter aus."""
+         if updated_key not in self.graph:
+             return
+         affected: Set[str] = nx.descendants(self.graph, updated_key)
+         for node in affected:
+             processor = self._processors.get(node)
+             if processor:
+                 processor(state)
+ 
++
+ # Definierte Abhängigkeiten zwischen den Wizard-Feldern
+ _DEPENDENCY_PAIRS: list[tuple[str, str]] = [
+     # Wenn Jobtitel/Firmendaten geändert -> Aufgaben & Skills aktualisieren
+     ("job_title", "task_list"),
+     ("job_title", "must_have_skills"),
+     ("job_title", "commission_structure"),
+     ("job_level", "bonus_scheme"),
+     # Aufgaben/Muss-Fähigkeiten ändern -> Gehaltsspanne aktualisieren
+     ("task_list", "salary_range"),
+     ("must_have_skills", "salary_range"),
+     ("must_have_skills", "nice_to_have_skills"),
+     # Remote-Policy ändern -> empfohlene Publikationskanäle aktualisieren
+     ("remote_work_policy", "desired_publication_channels"),
+     # Branchen-Erfahrung ändern -> Aufgabenliste aktualisieren
+     ("industry_experience", "task_list"),
+     # Rohtext geändert (z.B. aus Datei-Analyse) -> Gehaltsspanne verfeinern (wenn 'competitive')
+-    ("parsed_data_raw", "salary_range")
++    ("parsed_data_raw", "salary_range"),
+ ]
+ 
++
+ def build_default_graph(engine: TriggerEngine) -> None:
+     """Befüllt die TriggerEngine mit dem Abhängigkeitsgraphen und registriert die Verarbeitungsfunktionen."""
+     engine.register_dependencies(_DEPENDENCY_PAIRS)
+-    # Importiere Verarbeitungsfunktionen aus Prozessor-Modulen
+-    from src.processors.salary import update_salary_range
+-    from src.processors.publication import update_publication_channels
+-
+-    # Aufgaben-, Skill- und Benefit-Funktionen aus dem Logic-Paket importieren
+-    from src.logic.processors import (
++    # Importiere Verarbeitungsfunktionen
++    from vacalyser.logic.processors import (
++        update_salary_range,
++        update_publication_channels,
+         update_task_list,
+         update_must_have_skills,
+         update_nice_to_have_skills,
+         update_bonus_scheme,
+         update_commission_structure,
+     )
++
+     # Funktionen mit ihren Ziel-Feldern verknüpfen
+     engine.register_processor("task_list", update_task_list)
+     engine.register_processor("must_have_skills", update_must_have_skills)
+     engine.register_processor("nice_to_have_skills", update_nice_to_have_skills)
+     engine.register_processor("salary_range", update_salary_range)
+-    engine.register_processor("desired_publication_channels", update_publication_channels)
++    engine.register_processor(
++        "desired_publication_channels", update_publication_channels
++    )
+     engine.register_processor("bonus_scheme", update_bonus_scheme)
+     engine.register_processor("commission_structure", update_commission_structure)
+diff --git a/vacalyser/models/__init__.py b/vacalyser/models/__init__.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/vacalyser/models/job_models.py b/vacalyser/models/job_models.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..12fe1cbc666017916dcda4b83c89c115b97522b5
+--- /dev/null
++++ b/vacalyser/models/job_models.py
+@@ -0,0 +1,14 @@
++from __future__ import annotations
++from typing import Optional
++from pydantic import BaseModel
++
++
++class JobSpec(BaseModel):
++    """Simplified vacancy profile used throughout the app."""
++
++    job_title: Optional[str] = None
++    company_name: Optional[str] = None
++    task_list: Optional[str] = None
++    must_have_skills: Optional[str] = None
++    nice_to_have_skills: Optional[str] = None
++    salary_range: Optional[str] = None
+diff --git "a/pages/2_\360\237\217\240_Advantages.py" "b/vacalyser/pages/2_\360\237\217\240_Advantages.py"
+similarity index 96%
+rename from "pages/2_\360\237\217\240_Advantages.py"
+rename to "vacalyser/pages/2_\360\237\217\240_Advantages.py"
+index 30343ec3f37099b5ff569b4acf7239d59acc17be..9a1d661d2c80ef936f0b94bc27149c10aaffd289 100644
+--- "a/pages/2_\360\237\217\240_Advantages.py"
++++ "b/vacalyser/pages/2_\360\237\217\240_Advantages.py"
+@@ -14,81 +14,81 @@ from typing import List, Dict
+ # Page‑Config
+ # ---------------------------------------------------------------------------
+ st.set_page_config(
+     page_title="Vacalyser – Vorteile / Advantages",
+     page_icon="💡",
+     layout="wide",
+ )
+ 
+ # ---------------------------------------------------------------------------
+ # Sprachumschalter
+ # ---------------------------------------------------------------------------
+ lang: str = st.radio("🌐 Sprache / Language", ("Deutsch", "English"), horizontal=True)
+ 
+ # ---------------------------------------------------------------------------
+ # Daten: Benefits in DE & EN
+ # ---------------------------------------------------------------------------
+ BenefitsDict = Dict[str, Dict[str, List[str]]]
+ benefits: BenefitsDict = {
+     "Deutsch": {
+         "Line Manager": [
+             "Sofortiger Kompetenz‑Abgleich zwischen gewünschtem Skill‑Set und Marktverfügbarkeit",
+             "Live‑Budget‑Kalkulation auf Basis aktueller Gehaltsbenchmarks",
+             "Ampel‑Warnsystem für unrealistische Anforderungskombinationen",
+             "Automatische Priorisierung kritischer Must‑have‑Skills",
+             "Zeitersparnis durch One‑Pager‑Summary anstelle langer E‑Mail‑Threads",
+-            "Interaktive Szenario‑Planung (\"Was kostet es, wenn wir auf Senior‑ statt Mid‑Level gehen?\")",
++            'Interaktive Szenario‑Planung ("Was kostet es, wenn wir auf Senior‑ statt Mid‑Level gehen?")',
+             "Rollen‑Klarheit dank vordefinierter Verantwortlichkeitsmatrix (RACI)",
+             "Benutzerdefinierte KPI‑Dashboards (Time‑to‑Hire, Quality‑of‑Hire, Cost‑per‑Hire)",
+-            "Versionshistorie für spätere Audits (\"wer hat wann was geändert?\")",
++            'Versionshistorie für spätere Audits ("wer hat wann was geändert?")',
+             "Automatisierte Reminder bei überfälligen Feedback‑Schritten",
+             "KI‑gestützte Formulierungshilfen für attraktive Benefit‑Formulierungen",
+             "Skill‑Gap‑Heatmap für internes Upskilling vs. externes Hiring",
+             "Instant‑Marktreport (Kandidatendichte, Konkurrenzdruck, Standortattraktivität)",
+             "Genehmigungs‑Workflow mit elektronischer Signatur",
+             "Konfliktfreies Headcount‑Tracking über mehrere Cost‑Center hinweg",
+             "Self‑Service‑Reports ohne BI‑Abhängigkeit",
+             "Compliance‑Check (AGG, Equal Pay, EU‑AI‑Act‑Konformität)",
+             "Benchmarks gegen Unternehmensrichtlinien (Salary Bands, Remote‑Policy)",
+             "Mehrsprachige Oberfläche für globale Teams",
+             "Export‑Funktion zu PowerPoint, PDF, Excel",
+             "Integrations‑Hooks (Slack, Teams, Jira) für nahtlose Kollaboration",
+-            "\"Next‑Best‑Action\"‑Hints (z. B. \"Interview‑Panel einladen\")",
++            '"Next‑Best‑Action"‑Hints (z. B. "Interview‑Panel einladen")',
+             "Kalender‑Sync zur Blockierung kritischer Deadlines",
+             "Realtime‑Push‑Notifications bei Marktveränderungen (Tarifabschlüsse etc.)",
+             "Durchgängige Barrierefreiheit (WCAG 2.2)",
+             "Dark‑Mode für lange Arbeitssitzungen",
+             "Mobile‑Responsive für Genehmigungen on the go",
+             "Data‑Privacy‑Shield trennt sensible Kandidatendaten von Management‑Info",
+             "On‑Demand‑Training‑Snippets (Embedded Videos, Tooltips)",
+             "Gamifizierte Completion‑Tracker zur Motivation",
+         ],
+         "Recruiter": [
+             "Automatisches Parsing von JD‑Entwürfen, CVs & Links",
+             "Datenbank‑Vernetzung (ATS, CRM, LinkedIn Recruiter, GitHub)",
+             "KPIs in Echtzeit (Sourcing‑Conversion‑Rate, Pipeline‑Velocity)",
+-            "KI‑basierte Suchstrings generieren (\"Boolean‑Builder 2.0\")",
++            'KI‑basierte Suchstrings generieren ("Boolean‑Builder 2.0")',
+             "Kandidaten‑Personas aus Text‑ und Profilanalyse",
+             "Bulk‑Mail‑Personalisierung mit A/B‑Subject‑Lines",
+             "Job‑Ad‑SEO‑Check (Google for Jobs, Indeed)",
+             "Bias‑Detection & Inclusive‑Language‑Alerts",
+             "Auto‑Tagging für Talent‑Pools nach Skills & Seniority",
+             "Smart‑Rankings priorisieren Matches nach 360°‑Fit",
+             "Interview‑Guide‑Generator (kompetenzbasiert, STAR‑Methode)",
+             "Fallback‑Sourcing‑Kanäle Empfehlungen (Nischenbörsen, Community‑Foren)",
+             "One‑Click‑Übergabe an Headhunter mit definierter Datentiefe",
+             "Reminder‑Workflow für Hiring‑Manager‑Feedback",
+             "Candidate‑Care‑Score misst Antwortzeiten & Touchpoints",
+             "Ghosting‑Risiko‑Radar prognostiziert Absprungwahrscheinlichkeit",
+             "Recruiter‑Leaderboard (Transparente Performance)",
+             "Automated Scheduling mit Kalenderslots & Video‑Links",
+             "Offer‑Benchmarking‑Wizard gegen Markt & interne Bands",
+             "Snippets‑Library für schnelle Stakeholder‑Updates",
+             "Mehrstufige Approval‑Matrix für Offerte & Budget",
+             "ChatGPT‑Assisted Negotiation‑Tips live im Kandidatengespräch",
+             "Bulk‑PDF‑Export aller Kandidatenprofile für Hiring‑Panels",
+             "GDPR‑Timer für Lösch‑Fristen & Opt‑In‑Tracking",
+             "Sourcing‑Funnel‑Visualization als Kanban",
+             "Recruiter‑Slack‑Bot mit Daily‑Digest",
+             "Social‑Listening‑Monitor (Glassdoor, Kununu)",
+             "Diversity‑Heatmap gegen interne Ziele",
+             "Referral‑Booster‑Widget mit Gamification",
+@@ -137,81 +137,81 @@ benefits: BenefitsDict = {
+             "Vorhersage der Interview‑Dauer & beteiligten Personen",
+             "Automatisierte Vorbereitungstipps (Tech‑Stack, Unternehmenskultur)",
+             "Diversity‑Friendly Sprache minimiert Bias",
+             "GDPR‑Safe Data Vault für alle Unterlagen",
+             "Self‑Service‑Portal zur Dokumentenaktualisierung",
+             "Option auf Anonymisierung für Blind‑Screening",
+             "Geolocation‑basierte Pendel‑Zeit‑Anzeige",
+             "Responsive Dark‑ & Light‑Mode",
+             "Multi‑Language‑Support (mind. DE/EN/ES/FR)",
+             "Talent‑Pool‑Opt‑In mit personalisierten Job‑Alerts",
+             "Interview‑Reminder mit Kalendersync & Routenplaner",
+             "Free‑Download persönlicher Assessment‑Reports",
+             "Feedback‑Loop – Kandidat bewertet Prozess & Interviewer",
+             "Referral‑Credits für erfolgreiche Empfehlungen",
+             "Off‑Topic‑Opt‑Out (Keine unnötigen Daten wie Geburtsdatum)",
+             "Post‑Offer‑Onboarding‑Preview (Team‑Video, Projekt‑Roadmap)",
+         ],
+     },
+     "English": {
+         "Line Manager": [
+             "Immediate competency match between desired skill set and market availability",
+             "Live budget calculation based on current salary benchmarks",
+             "Traffic‑light alerts for unrealistic requirement combinations",
+             "Automatic prioritisation of critical must‑have skills",
+             "Time savings through one‑pager summary instead of long email threads",
+-            "Interactive scenario planning (\"What does it cost if we hire senior instead of mid‑level?\")",
++            'Interactive scenario planning ("What does it cost if we hire senior instead of mid‑level?")',
+             "Role clarity via predefined RACI responsibility matrix",
+             "Custom KPI dashboards (time‑to‑hire, quality‑of‑hire, cost‑per‑hire)",
+-            "Version history for later audits (\"who changed what and when?\")",
++            'Version history for later audits ("who changed what and when?")',
+             "Automated reminders for overdue feedback steps",
+             "AI‑assisted wording suggestions for attractive benefit descriptions",
+             "Skill‑gap heatmap for internal upskilling vs external hiring",
+             "Instant market report (talent density, competition pressure, location attractiveness)",
+             "Approval workflow with electronic signature",
+             "Conflict‑free headcount tracking across multiple cost centres",
+             "Self‑service reports without BI dependency",
+             "Compliance check (anti‑discrimination, equal pay, EU AI Act)",
+             "Benchmarks against company guidelines (salary bands, remote policy)",
+             "Multilingual interface for global teams",
+             "Export to PowerPoint, PDF, Excel",
+             "Integration hooks (Slack, Teams, Jira) for seamless collaboration",
+-            "\"Next best action\" hints (e.g. \"invite interview panel\")",
++            '"Next best action" hints (e.g. "invite interview panel")',
+             "Calendar sync to block critical deadlines",
+             "Real‑time push notifications on market changes (collective agreements, etc.)",
+             "Full accessibility (WCAG 2.2)",
+             "Dark mode for long work sessions",
+             "Mobile responsive for approvals on the go",
+             "Data privacy shield separates sensitive candidate data from management info",
+             "On‑demand training snippets (embedded videos, tooltips)",
+             "Gamified completion tracker for motivation",
+         ],
+         "Recruiter": [
+             "Automatic parsing of JD drafts, CVs & links",
+             "Database connectivity (ATS, CRM, LinkedIn Recruiter, GitHub)",
+             "Real‑time KPIs (sourcing conversion rate, pipeline velocity)",
+-            "AI‑generated search strings (\"Boolean Builder 2.0\")",
++            'AI‑generated search strings ("Boolean Builder 2.0")',
+             "Candidate personas from text and profile analysis",
+             "Bulk‑mail personalisation with A/B subject lines",
+             "Job‑ad SEO check (Google for Jobs, Indeed)",
+             "Bias detection & inclusive language alerts",
+             "Auto‑tagging for talent pools by skills & seniority",
+             "Smart rankings prioritise matches by 360° fit",
+             "Interview guide generator (competency based, STAR method)",
+             "Fallback sourcing channel recommendations (niche boards, community forums)",
+             "One‑click hand‑off to head‑hunters with defined data depth",
+             "Reminder workflow for hiring‑manager feedback",
+             "Candidate care score measures response times & touchpoints",
+             "Ghosting risk radar predicts dropout probability",
+             "Recruiter leaderboard (transparent performance)",
+             "Automated scheduling with calendar slots & video links",
+             "Offer benchmarking wizard against market & internal bands",
+             "Snippet library for quick stakeholder updates",
+             "Multi‑level approval matrix for offers & budget",
+             "ChatGPT‑assisted negotiation tips live during candidate calls",
+             "Bulk PDF export of all candidate profiles for hiring panels",
+             "GDPR timer for deletion deadlines & opt‑in tracking",
+             "Sourcing funnel visualisation as Kanban",
+             "Recruiter Slack bot with daily digest",
+             "Social listening monitor (Glassdoor, Kununu)",
+             "Diversity heatmap versus internal targets",
+             "Referral booster widget with gamification",
+@@ -266,96 +266,100 @@ benefits: BenefitsDict = {
+             "Option for anonymisation for blind screening",
+             "Gamified challenges as pre‑assessment",
+             "Mobile‑first flow completed in under 5 minutes",
+             "Geolocation‑based commuting time display",
+             "Responsive dark & light mode",
+             "Multi‑language support (at least DE/EN/ES/FR)",
+             "Talent pool opt‑in with personalised job alerts",
+             "Interview reminders with calendar sync & route planner",
+             "Live Q&A chatbot with vector search backend",
+             "Status GIFs & emojis for positive candidate experience",
+             "Skill match score explains fit transparently",
+             "Free download of personal assessment reports",
+             "Feedback loop – candidate rates process & interviewer",
+             "Referral credits for successful recommendations",
+             "Accessible file upload (drag & drop + cloud links)",
+             "Off‑topic opt‑out (no unnecessary data like date of birth)",
+             "Post‑offer onboarding preview (team video, project roadmap)",
+         ],
+     },
+ }
+ 
+ # ---------------------------------------------------------------------------
+ # Helper: Renderer
+ # ---------------------------------------------------------------------------
+ 
++
+ def render_benefits(title: str, items: List[str], show_top: int = 8):
+     """Render top benefits plus full list in expander."""
+     st.subheader(title)
+ 
+     for benefit in items[:show_top]:
+         st.markdown(f"• **{benefit}**")
+ 
+     if len(items) > show_top:
+         with st.expander(
+             (
+                 f"Alle {len(items)} Vorteile anzeigen"
+                 if lang == "Deutsch"
+                 else f"Show all {len(items)} advantages"
+             )
+         ):
+             for idx, benefit in enumerate(items[show_top:], start=show_top + 1):
+                 st.markdown(f"{idx}. {benefit}")
+ 
++
+ # ---------------------------------------------------------------------------
+ # Titel & Intro (sprachabhängig)
+ # ---------------------------------------------------------------------------
+ 
+ title_de = "🚀 Vorteile von **Vacalyser**"
+ intro_de = (
+     "Wähle deine Perspektive und entdecke die spezifischen Mehrwerte. "
+     "Nutze die *Alle Vorteile anzeigen*-Schaltfläche, um die komplette Liste zu sehen."
+ )
+ 
+ title_en = "🚀 Advantages of **Vacalyser**"
+ intro_en = (
+     "Choose your perspective and discover the specific benefits. "
+     "Use the *Show all advantages*-button to reveal the full list."
+ )
+ 
+ st.title(title_de if lang == "Deutsch" else title_en)
+ 
+ st.markdown(intro_de if lang == "Deutsch" else intro_en)
+ 
+ # ---------------------------------------------------------------------------
+ # Layout: Tabs
+ # ---------------------------------------------------------------------------
+ 
+ tab_labels_de = ["👩‍💼 Line Manager", "🧑‍💻 Recruiter", "🏢 Unternehmen", "🙋 Bewerber"]
+ 
+ tab_labels_en = ["👩‍💼 Line Manager", "🧑‍💻 Recruiter", "🏢 Company", "🙋 Candidate"]
+ 
+ labels = tab_labels_de if lang == "Deutsch" else tab_labels_en
+ 
+ tabs = st.tabs(labels)
+ 
+ with tabs[0]:
+     render_benefits(labels[0], benefits[lang]["Line Manager"])
+ 
+ with tabs[1]:
+     render_benefits(labels[1], benefits[lang]["Recruiter"])
+ 
+ with tabs[2]:
+     label_key = "Unternehmen" if lang == "Deutsch" else "Company"
+     render_benefits(labels[2], benefits[lang][label_key])
+ 
+ with tabs[3]:
+     label_key = "Bewerber" if lang == "Deutsch" else "Candidate"
+     render_benefits(labels[3], benefits[lang][label_key])
+ 
+ # ---------------------------------------------------------------------------
+ # Footer Hinweis
+ # ---------------------------------------------------------------------------
+ footer_de = "Hinweis: Passe die Listen in *pages/advantages.py* frei an, um sie zu kürzen oder zu erweitern."
+-footer_en = "Note: Adjust the lists in *pages/advantages.py* freely to shorten or extend them."
++footer_en = (
++    "Note: Adjust the lists in *pages/advantages.py* freely to shorten or extend them."
++)
+ 
+ st.caption(footer_de if lang == "Deutsch" else footer_en)
+diff --git "a/vacalyser/pages/3_\360\237\222\241_Tech_Overview.py" "b/vacalyser/pages/3_\360\237\222\241_Tech_Overview.py"
+new file mode 100644
+index 0000000000000000000000000000000000000000..b0567bb2879422154c8bbaed204e195b609acdb1
+--- /dev/null
++++ "b/vacalyser/pages/3_\360\237\222\241_Tech_Overview.py"
+@@ -0,0 +1,232 @@
++# pages/tech_overview.py
++"""Streamlit-Seite: Technology Deep Dive & Wizard Flow
++
++Für IT‑Spezialisten und Entscheider bietet diese Seite einen kompakten, aber
++technisch fundierten Überblick über den *Vacalyser*-Stack sowie eine visuelle
++Darstellung des mehrstufigen Wizard‑Flows (Discovery‑Process).
++Ein Sprach‑ und Zielgruppenumschalter sorgt dafür, dass Texte sowohl für ein
++Fach‑Publikum (Tech‑interessiert/Tech‑savvy) als auch für nicht‑technische
++Stakeholder (Allgemein verständlich/General public) optimal angepasst werden.
++"""
++
++import streamlit as st
++
++# ---------------------------------------------------------------------------
++# Language & audience toggle
++# ---------------------------------------------------------------------------
++lang = st.radio(
++    "🌐 Sprache / Language", ("Deutsch", "English"), horizontal=True, key="lang"
++)
++audience = st.radio(
++    "🎯 Zielgruppe / Audience",
++    (
++        ("Tech-interessiert", "Allgemein verständlich")
++        if lang == "Deutsch"
++        else ("Tech-savvy", "General public")
++    ),
++    horizontal=True,
++    key="audience",
++)
++
++TECH_AUDIENCE = "Tech-interessiert" if lang == "Deutsch" else "Tech-savvy"
++
++# ---------------------------------------------------------------------------
++# Technology catalogue
++# ---------------------------------------------------------------------------
++tech_info = {
++    "Deutsch": {
++        "Tech-interessiert": [
++            (
++                "Retrieval-Augmented Generation (RAG)",
++                "FAISS bzw. künftig ChromaDB/Weaviate liefern Vektor‑Suche über mehr als 400 000 ESCO‑Skills und Domain‑Korpora; LangChain orchestriert die RAG‑Pipeline.",
++            ),
++            (
++                "LangChain Agents & OpenAI Function Calling",
++                "Deterministische Tool‑Aufrufe (PDF‑Parser, ESCO‑Lookup, Markdown‑Renderer) mittels JSON‑Schemas für robustes Error‑Handling.",
++            ),
++            (
++                "Embedding‑Model",
++                "OpenAI *text-embedding-3-small* (8 k Dim); selbstgehostete Alternative *e5-large-v2* ist vorbereitet.",
++            ),
++            (
++                "Streaming Responses",
++                "Tokenweises UI‑Streaming (< 300 ms TTFB) für flüssige Nutzer‑Erfahrung.",
++            ),
++            (
++                "CI/CD Pipeline",
++                "GitHub Actions → Docker → Terraform; Canary‑Deployments auf Kubernetes mit automatischem Rollback.",
++            ),
++            (
++                "Observability & Kosten‑Tracking",
++                "OpenTelemetry Tracing + Prometheus/Grafana; Token‑Kosten pro Request im UI sichtbar.",
++            ),
++            (
++                "Security Layer",
++                "OIDC‑basiertes Secrets‑Management und zweistufige Rollenlogik (Recruiter vs. Admin).",
++            ),
++            (
++                "Event‑Driven Wizard Flow",
++                "Finite‑State‑Machine triggert dynamische Fragen und speichert Zwischenergebnisse als JSON‑Graph.",
++            ),
++            (
++                "Infrastructure as Code",
++                "Vollständige Cloud‑Provisionierung in Terraform 1.7 mit Drift‑Detection.",
++            ),
++        ],
++        "Allgemein verständlich": [
++            (
++                "Künstliche Intelligenz",
++                "Vacalyser nutzt modernste KI, um Stellenanforderungen präzise zu verstehen und passende Kompetenzen vorzuschlagen.",
++            ),
++            (
++                "Schlaue Suche",
++                "Eine Spezial‑Suche findet blitzschnell relevante Fähigkeiten und Aufgaben.",
++            ),
++            (
++                "Fließende Antworten",
++                "Antworten erscheinen Stück für Stück – Wartezeiten verkürzen sich.",
++            ),
++            (
++                "Automatische Updates",
++                "Neue Versionen werden im Hintergrund eingespielt, ohne Ausfallzeiten.",
++            ),
++            (
++                "Sicherheit & Datenschutz",
++                "Aktuelle Standards schützen vertrauliche Daten konsequent.",
++            ),
++        ],
++    },
++    "English": {
++        "Tech-savvy": [
++            (
++                "Retrieval-Augmented Generation (RAG)",
++                "FAISS – future upgrade to ChromaDB/Weaviate – provides vector search across 400 k+ ESCO skills & domain corpora, orchestrated via LangChain.",
++            ),
++            (
++                "LangChain Agents & OpenAI Function Calling",
++                "Deterministic tool invocation (PDF parser, ESCO lookup, Markdown renderer) using strict JSON schemas for resilient error handling.",
++            ),
++            (
++                "Embedding Model",
++                "OpenAI *text-embedding-3-small* (8 k dim); self‑hosted fallback *e5-large-v2* prepared.",
++            ),
++            (
++                "Streaming Responses",
++                "Sub‑300 ms TTFB with token‑level UI streaming for a snappy UX.",
++            ),
++            (
++                "CI/CD Pipeline",
++                "GitHub Actions → Docker → Terraform; canary deployments on Kubernetes with auto‑rollback.",
++            ),
++            (
++                "Observability & Cost Governance",
++                "OpenTelemetry tracing + Prometheus/Grafana; token cost per request surfaced in the UI.",
++            ),
++            (
++                "Security Layer",
++                "OIDC‑backed secret management and dual role model (Recruiter vs. Admin).",
++            ),
++            (
++                "Event‑Driven Wizard Flow",
++                "Finite state machine triggers dynamic questions and stores interim results as a JSON graph.",
++            ),
++            (
++                "Infrastructure as Code",
++                "Full cloud provisioning in Terraform 1.7 with automatic drift detection.",
++            ),
++        ],
++        "General public": [
++            (
++                "Artificial Intelligence",
++                "Vacalyser uses cutting‑edge AI to understand job requirements and suggest matching skills.",
++            ),
++            (
++                "Smart Search",
++                "A specialised search engine instantly finds relevant skills and tasks.",
++            ),
++            ("Live Answers", "Replies appear gradually, so you don’t have to wait."),
++            (
++                "Automatic Updates",
++                "New versions are rolled out silently with no downtime.",
++            ),
++            (
++                "Security & Privacy",
++                "Modern standards keep your data safe at every step.",
++            ),
++        ],
++    },
++}
++
++# ---------------------------------------------------------------------------
++# Wizard flow definition
++# ---------------------------------------------------------------------------
++wizard_steps = [
++    ("Intake", "Job‑Titel & Dokumente" if lang == "Deutsch" else "Job title & docs"),
++    ("Parse", "AI‑Parsing"),
++    ("Enrich", "ESCO‑Mapping"),
++    ("QA", "Dynamic Q&A"),
++    ("Draft", "Profil‑Entwurf" if lang == "Deutsch" else "Draft profile"),
++    ("Review", "Freigabe" if lang == "Deutsch" else "Review"),
++    ("Export", "Export (PDF/MD)"),
++]
++
++
++def render_wizard_graph() -> None:
++    dot = (
++        "digraph wizard {\n"
++        "  rankdir=LR;\n"
++        '  node [shape=box style="rounded,filled" fontname=Helvetica color=#5b8def fillcolor=#eef4ff];\n'
++    )
++    for step, label in wizard_steps:
++        dot += f'  {step} [label="{label}"];\n'
++    for idx in range(len(wizard_steps) - 1):
++        dot += f"  {wizard_steps[idx][0]} -> {wizard_steps[idx + 1][0]};\n"
++    dot += "}"
++    st.graphviz_chart(dot)
++
++
++# ---------------------------------------------------------------------------
++# Layout
++# ---------------------------------------------------------------------------
++if audience == TECH_AUDIENCE and lang == "Deutsch":
++    title = "🛠️ Technischer Deep Dive"
++elif audience == TECH_AUDIENCE:
++    title = "🛠️ Technology Deep Dive"
++elif lang == "Deutsch":
++    title = "🛠️ Technologischer Überblick"
++else:
++    title = "🛠️ Technology Overview"
++
++st.title(title)
++
++intro = (
++    "Nachfolgend findest du die Schlüsseltechnologien, die Vacalyser antreiben, "
++    "sowie eine Grafik, die den Discovery‑Prozess Schritt für Schritt veranschaulicht."
++    if lang == "Deutsch"
++    else "Below you can explore the core technologies powering Vacalyser together with a graph "
++    "illustrating each step of the discovery process."
++)
++
++st.markdown(intro)
++
++# ─── Technology cards ───
++for tech, desc in tech_info[lang][audience]:
++    st.markdown(f"### 🔹 {tech}\n{desc}")
++
++# ─── Wizard flow graph for tech audience ───
++if audience == TECH_AUDIENCE:
++    st.divider()
++    st.markdown(
++        "#### 🔄 Wizard‑Flow & State Machine"
++        if lang == "Deutsch"
++        else "#### 🔄 Wizard Flow & State Machine"
++    )
++    render_wizard_graph()
++
++st.divider()
++
++st.info(
++    "Die gezeigte Architektur ist modular erweiterbar und bildet eine zukunftssichere Basis für hochskalierbare Recruiting‑Workflows."
++    if lang == "Deutsch"
++    else "The presented stack is modular and future‑proof, enabling highly scalable recruiting workflows with minimal operational overhead."
++)
+diff --git a/functions/__init__.py b/vacalyser/pages/__init__.py
+similarity index 100%
+rename from functions/__init__.py
+rename to vacalyser/pages/__init__.py
+diff --git a/vacalyser/services/__init__.py b/vacalyser/services/__init__.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/vacalyser/services/scraping_tools.py b/vacalyser/services/scraping_tools.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..f19cee7540b251cedccccbf4905ff42c3d0d1be8
+--- /dev/null
++++ b/vacalyser/services/scraping_tools.py
+@@ -0,0 +1,41 @@
++# Optional decorator (works even without tool_registry)
++try:
++    from vacalyser.utils.tool_registry import tool
++except (ImportError, ModuleNotFoundError):  # Fallback decorator
++
++    def tool(_func=None, **_kwargs):  # type: ignore
++        def decorator(func):
++            return func
++
++        return decorator if _func is None else decorator(_func)
++
++
++@tool(
++    name="scrape_company_site",
++    description=("Fetches <title> and meta description from a company homepage."),
++    parameters={
++        "type": "object",
++        "properties": {
++            "url": {"type": "string", "description": "Company homepage URL"}
++        },
++        "required": ["url"],
++    },
++    return_type="object",
++)
++def scrape_company_site(url: str) -> dict:
++    """Return the title and meta description of the given URL."""
++    import requests  # type: ignore
++    from bs4 import BeautifulSoup
++
++    try:
++        resp = requests.get(url, timeout=10)
++        resp.raise_for_status()
++    except Exception:
++        return {}
++    soup = BeautifulSoup(resp.text, "html.parser")
++    title = soup.title.string.strip() if soup.title and soup.title.string else ""
++    descr_tag = soup.find("meta", attrs={"name": "description"})  # type: ignore[assignment]
++    description = (
++        descr_tag["content"].strip() if descr_tag and descr_tag.get("content") else ""
++    )
++    return {"title": title, "description": description}
+diff --git a/src/agents/vacancy_agent.py b/vacalyser/services/vacancy_agent.py
+similarity index 81%
+rename from src/agents/vacancy_agent.py
+rename to vacalyser/services/vacancy_agent.py
+index a2712c304023dd4b889bebaab74f15c177b6806b..ccb501463a44ba88585a5cd1b268a3d9d6723b47 100644
+--- a/src/agents/vacancy_agent.py
++++ b/vacalyser/services/vacancy_agent.py
+@@ -1,203 +1,224 @@
+ from __future__ import annotations
+ import json
+ import logging
+ from typing import Any, Dict
+ 
+ import openai
+ 
+ # Globale Konfiguration laden (Modellwahl, API-Schlüssel, usw.)
+-from src.config import config
++from vacalyser.utils import config
+ 
+ # Logger konfigurieren
+ logging.basicConfig(level=logging.INFO)
+ logger = logging.getLogger(__name__)
+ 
+ 
+-
+ # Funktionen (Tools) für OpenAI Function Calling definieren
+ FUNCTIONS = [
+     {
+         "name": "scrape_company_site",
+         "description": "Fetch basic company info (title and meta description) from a company website.",
+         "parameters": {
+             "type": "object",
+             "properties": {
+-                "url": {"type": "string", "description": "The URL of the company homepage."}
++                "url": {
++                    "type": "string",
++                    "description": "The URL of the company homepage.",
++                }
+             },
+-            "required": ["url"]
+-        }
++            "required": ["url"],
++        },
+     },
+     {
+         "name": "extract_text_from_file",
+         "description": "Extract readable text from an uploaded job-ad file (PDF, DOCX, or TXT).",
+         "parameters": {
+             "type": "object",
+             "properties": {
+-                "file_content": {"type": "string", "description": "Base64-encoded file content."},
+-                "filename":    {"type": "string", "description": "Original filename with extension."}
++                "file_content": {
++                    "type": "string",
++                    "description": "Base64-encoded file content.",
++                },
++                "filename": {
++                    "type": "string",
++                    "description": "Original filename with extension.",
++                },
+             },
+-            "required": ["file_content", "filename"]
+-        }
+-    }
++            "required": ["file_content", "filename"],
++        },
++    },
+ ]
+ 
+ # System-Rollen-Nachricht für den Assistant
+ SYSTEM_MESSAGE = (
+     "You are Vacalyser, an AI assistant for recruiters. "
+     "Your job is to extract detailed, structured job vacancy information from input text (job ads) or websites. "
+     "Return the information as JSON that matches the schema of the JobSpec model, with no extra commentary."
+ )
+ 
+-def auto_fill_job_spec(input_url: str = "", file_bytes: bytes = None, file_name: str = "",
+-                       summary_quality: str = "standard") -> Dict[str, Any]:
++
++def auto_fill_job_spec(
++    input_url: str = "",
++    file_bytes: bytes = None,
++    file_name: str = "",
++    summary_quality: str = "standard",
++) -> Dict[str, Any]:
+     """
+     Analysiert eine Stellenanzeige von einer URL oder Datei und gibt die extrahierten Felder als Dict zurück.
+     - input_url: URL einer Stellenanzeige (falls angegeben).
+     - file_bytes: Rohbytes einer hochgeladenen Stellenbeschreibung.
+     - file_name: Dateiname der hochgeladenen Datei.
+     - summary_quality: {'economy', 'standard', 'high'} – bei sehr langen Texten wie stark zusammengefasst werden soll.
+     """
+     # Eingabe validieren
+     if not input_url and not file_bytes:
+-        raise ValueError("auto_fill_job_spec erfordert entweder eine URL oder eine Datei als Eingabe.")
++        raise ValueError(
++            "auto_fill_job_spec erfordert entweder eine URL oder eine Datei als Eingabe."
++        )
+     if input_url and file_bytes:
+         # Bei beiden Eingaben: URL priorisieren, Datei ignorieren
+         file_bytes = None
+         file_name = ""
+ 
+     # Nutzeranweisung (Prompt) für das LLM vorbereiten
+     user_message = ""
+     if input_url:
+         user_message += f"The job ad is located at this URL: {input_url}\n"
+     if file_bytes:
+-        user_message += "A job ad file is provided. Please analyze its contents carefully.\n"
++        user_message += (
++            "A job ad file is provided. Please analyze its contents carefully.\n"
++        )
+     user_message += "Extract all relevant job information and return it in JSON format matching the JobSpec schema."
+ 
+     # Falls der Dateitext sehr lang ist: vorab zusammenfassen, um Tokens zu sparen
+     if file_bytes and file_name:
+         try:
+             text_length = len(file_bytes)
+         except Exception:
+             text_length = 0
+         if text_length > 100_000:  # ~100 KB
+-            from src.tools.file_tools import extract_text_from_file
+-            from src.utils.summarize import summarize_text
++            from vacalyser.logic.file_tools import extract_text_from_file
++            from vacalyser.utils.summarize import summarize_text
++
+             extracted_text = extract_text_from_file(file_bytes, file_name)
+             if isinstance(extracted_text, str) and len(extracted_text) > 5000:
+                 summary = summarize_text(extracted_text, quality=summary_quality)
+                 # Anweisung an Assistant zur Verwendung der Zusammenfassung anpassen
+                 user_message = (
+                     "The job ad text was summarized due to length. "
+                     "Please extract job info from the following summary:\n"
+                     f"{summary}\nReturn the info as JSON per JobSpec."
+                 )
+ 
+     # OpenAI API mit Function Calling
+     content = ""
+     messages = [
+         {"role": "system", "content": SYSTEM_MESSAGE},
+         {"role": "user", "content": user_message},
+     ]
+     try:
+         response = openai.ChatCompletion.create(
+             model=config.OPENAI_MODEL,
+             messages=messages,
+             functions=FUNCTIONS,
+             function_call="auto",
+             temperature=0.2,
+             max_tokens=1500,
+         )
+     except Exception as api_error:
+         logger.error(f"OpenAI API Fehler in auto_fill_job_spec: {api_error}")
+         return {}
+     first_message = response.choices[0].message
+     if hasattr(first_message, "function_call") and first_message.function_call:
+         # Wenn das LLM eine Tool-Funktion aufruft, diese ausführen
+         func_name = first_message.function_call.name
+         func_args = {}
+         try:
+             func_args = json.loads(first_message.function_call.arguments or "{}")
+         except Exception:
+             pass
+         func_result = ""
+         try:
+             if func_name == "scrape_company_site":
+-                from src.tools.scraping_tools import scrape_company_site
++                from vacalyser.services.scraping_tools import scrape_company_site
++
+                 result_data = scrape_company_site(**func_args)
+                 if isinstance(result_data, dict):
+                     func_result = (
+-                        (result_data.get("title") or "") + "\n" + (result_data.get("description") or "")
++                        (result_data.get("title") or "")
++                        + "\n"
++                        + (result_data.get("description") or "")
+                     ).strip()
+                 else:
+                     func_result = str(result_data)
+             elif func_name == "extract_text_from_file":
+-                from src.tools.file_tools import extract_text_from_file
++                from vacalyser.logic.file_tools import extract_text_from_file
+                 import base64
++
+                 file_content_str = func_args.get("file_content", "")
+                 filename = func_args.get("filename", "")
+                 try:
+                     file_bytes_input = base64.b64decode(file_content_str)
+                 except Exception:
+                     file_bytes_input = file_content_str.encode("utf-8", "ignore")
+                 func_result = extract_text_from_file(file_bytes_input, filename) or ""
+                 if not isinstance(func_result, str):
+                     func_result = str(func_result)
+         except Exception as e:
+             logger.error(f"Fehler bei Tool-Ausführung {func_name}: {e}")
+         # Ergebnis der Funktion als Assistant-Antwort hinzufügen und zweiten API-Call durchführen
+         messages.append({"role": "function", "name": func_name, "content": func_result})
+         try:
+             second_response = openai.ChatCompletion.create(
+                 model=config.OPENAI_MODEL,
+                 messages=messages,
+                 functions=FUNCTIONS,
+                 function_call="auto",
+                 temperature=0.2,
+                 max_tokens=1500,
+             )
+         except Exception as api_error:
+             logger.error(f"OpenAI API Fehler beim zweiten Aufruf: {api_error}")
+             return {}
+         content = second_response.choices[0].message.content or ""
+     else:
+         # Das LLM hat direkt geantwortet (keine Funktion benötigt)
+         content = first_message.content or ""
+     if not content:
+         return {}
+ 
+     # 'content' sollte nun den JSON-String entsprechend JobSpec enthalten
+     content_str = content.strip()
+     if content_str.startswith("```"):
+         # Etwaige Markdown-Formatierung entfernen
+         content_str = content_str.strip("``` \n")
+     if content_str == "":
+         return {}
+     # JSON-String in Pydantic-Modell JobSpec validieren und parsen
+     try:
+-        from src.models.job_models import JobSpec
++        from vacalyser.models.job_models import JobSpec
++
+         job_spec = JobSpec.model_validate_json(content_str)
+     except Exception as e:
+         logger.error(f"Assistant lieferte kein gültiges JSON. Fehler: {e}")
+         # Versuchen, das LLM sein Format korrigieren zu lassen
+-        repair_system_msg = (
+-            "Your previous output was not valid JSON. Only output a valid JSON matching JobSpec now."
+-        )
++        repair_system_msg = "Your previous output was not valid JSON. Only output a valid JSON matching JobSpec now."
+         try:
+             repair_resp = openai.ChatCompletion.create(
+                 model=config.OPENAI_MODEL,
+                 messages=[
+                     {"role": "system", "content": SYSTEM_MESSAGE},
+                     {"role": "user", "content": user_message},
+                     {"role": "assistant", "content": content_str},
+                     {"role": "system", "content": repair_system_msg},
+                 ],
+                 temperature=0,
+                 max_tokens=1200,
+             )
+             content_str = repair_resp.choices[0].message.content.strip()
+             job_spec = JobSpec.model_validate_json(content_str)
+         except Exception as e:
+             logger.error(f"Reparaturversuch fehlgeschlagen: {e}")
+             return {}
+     # Als Python-Dictionary zurückgeben
+     return job_spec.model_dump()
+diff --git a/vacalyser/state/__init__.py b/vacalyser/state/__init__.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/src/state/session_state.py b/vacalyser/state/session_state.py
+similarity index 92%
+rename from src/state/session_state.py
+rename to vacalyser/state/session_state.py
+index 60561fac0a77d9075564152a334b06de59289332..ee1fb585b189abba7eb2c0bac9c4b04a9563f35d 100644
+--- a/src/state/session_state.py
++++ b/vacalyser/state/session_state.py
+@@ -1,23 +1,24 @@
+-# src/state/session_state.py
++# session_state.py
+ 
+ import streamlit as st
+-from src.config import keys
++from vacalyser.utils import keys
++
+ 
+ def initialize_session_state() -> None:
+     """
+     Ensure every expected wizard field exists in st.session_state.
+     Calling it more than once is a no-op.
+     """
+     if "_vacalyser_state_init" in st.session_state:
+         return  # already initialized in this session
+ 
+     # Initialize all wizard step fields to None
+     for step_fields in keys.STEP_KEYS.values():
+         for fld in step_fields:
+             st.session_state.setdefault(fld, None)
+     # Initialize generated/internal fields
+     for fld in keys.GENERATED_KEYS:
+         st.session_state.setdefault(fld, None)
+ 
+     st.session_state.setdefault("trace_events", [])
+     st.session_state["_vacalyser_state_init"] = True
+diff --git a/vacalyser/tests/test_file_tools.py b/vacalyser/tests/test_file_tools.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..dc90a5e6b55577bd7f32654091dca0b1bbb077d8
+--- /dev/null
++++ b/vacalyser/tests/test_file_tools.py
+@@ -0,0 +1,48 @@
++import io
++import sys
++from pathlib import Path
++
++import fitz
++from docx import Document
++
++sys.path.append(str(Path(__file__).resolve().parents[2]))
++
++from vacalyser.logic.file_tools import extract_text_from_file
++
++
++def _make_pdf_bytes(text: str) -> bytes:
++    doc = fitz.open()
++    page = doc.new_page()
++    page.insert_text((72, 72), text)
++    pdf_bytes = doc.tobytes()
++    doc.close()
++    return pdf_bytes
++
++
++def _make_docx_bytes(text: str) -> bytes:
++    doc = Document()
++    doc.add_paragraph(text)
++    buf = io.BytesIO()
++    doc.save(buf)
++    return buf.getvalue()
++
++
++def test_extract_text_from_txt() -> None:
++    data = b"hello world"
++    result = extract_text_from_file(data, "sample.txt")
++    assert isinstance(result, str)
++    assert "hello" in result
++
++
++def test_extract_text_from_pdf() -> None:
++    data = _make_pdf_bytes("pdf text")
++    result = extract_text_from_file(data, "sample.pdf")
++    assert isinstance(result, str)
++    assert "pdf text" in result
++
++
++def test_extract_text_from_docx() -> None:
++    data = _make_docx_bytes("docx text")
++    result = extract_text_from_file(data, "sample.docx")
++    assert isinstance(result, str)
++    assert "docx text" in result
+diff --git a/vacalyser/utils/__init__.py b/vacalyser/utils/__init__.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..c6933509f972338f56585dca49c7f764a8fbad13
+--- /dev/null
++++ b/vacalyser/utils/__init__.py
+@@ -0,0 +1,3 @@
++from .text_cleanup import clean_text
++
++__all__ = ["clean_text"]
+diff --git a/src/config/config.py b/vacalyser/utils/config.py
+similarity index 100%
+rename from src/config/config.py
+rename to vacalyser/utils/config.py
+diff --git a/vacalyser/utils/keys.py b/vacalyser/utils/keys.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..b66d0e7e797290772a20582360ddd062ccbfb662
+--- /dev/null
++++ b/vacalyser/utils/keys.py
+@@ -0,0 +1,120 @@
++# keys.py
++
++"""
++Canonical list of every wizard field, grouped by step.
++The two symbols used below:
++★ = mandatory field   ◆ = recommended    ⬚ = optional
++(Only informative – they’re all strings in the lists.)
++"""
++
++
++STEP_KEYS: dict[int, list[str]] = {
++    1: [  # Step 1: Discovery
++        "job_title",  # ★
++        "input_url",  # ⬚
++        "uploaded_file",  # ⬚
++        "parsed_data_raw",  # ⬚ (internal raw text storage)
++    ],
++    2: [  # Step 2: Basic Job & Company Info
++        "company_name",  # ★
++        "job_type",  # ★
++        "contract_type",  # ★
++        "job_level",  # ★
++        "city",  # ★
++        "headquarters_location",  # ◆
++        "brand_name",  # ⬚
++        "company_website",  # ⬚
++        "date_of_employment_start",  # ⬚
++        "team_structure",  # ⬚
++    ],
++    3: [  # Step 3: Role Definition
++        "role_description",  # ★
++        "role_type",  # ★
++        "reports_to",  # ◆
++        "supervises",  # ◆
++        "role_performance_metrics",  # ⬚
++        "role_priority_projects",  # ⬚
++        "travel_requirements",  # ⬚
++        "work_schedule",  # ⬚
++        "role_keywords",  # ⬚
++        "decision_making_authority",  # ⬚
++    ],
++    4: [  # Step 4: Tasks & Responsibilities
++        "task_list",  # ★
++        "key_responsibilities",  # ◆
++        "technical_tasks",  # ⬚
++        "managerial_tasks",  # ⬚
++        "administrative_tasks",  # ⬚
++        "customer_facing_tasks",  # ⬚
++        "internal_reporting_tasks",  # ⬚
++        "performance_tasks",  # ⬚
++        "innovation_tasks",  # ⬚
++        "task_prioritization",  # ⬚
++    ],
++    5: [  # Step 5: Skills & Competencies
++        "must_have_skills",  # ★
++        "hard_skills",  # ◆
++        "soft_skills",  # ◆
++        "nice_to_have_skills",  # ⬚
++        "certifications_required",  # ⬚
++        "language_requirements",  # ⬚
++        "tool_proficiency",  # ⬚
++        "technical_stack",  # ⬚
++        "domain_expertise",  # ⬚
++        "leadership_competencies",  # ⬚
++        "industry_experience",  # ⬚
++        "analytical_skills",  # ⬚
++        "communication_skills",  # ⬚
++        "project_management_skills",  # ⬚
++        "soft_requirement_details",  # ⬚
++        "visa_sponsorship",  # ⬚
++    ],
++    6: [  # Step 6: Compensation & Benefits
++        "salary_range",  # ★
++        "currency",  # ★
++        "pay_frequency",  # ★
++        "bonus_scheme",  # ◆
++        "commission_structure",  # ◆
++        "vacation_days",  # ◆
++        "remote_work_policy",  # ◆
++        "flexible_hours",  # ◆
++        "relocation_assistance",  # ⬚
++        "childcare_support",  # ⬚
++    ],
++    7: [  # Step 7: Recruitment Process
++        "recruitment_contact_email",  # ★
++        "recruitment_steps",  # ◆
++        "recruitment_timeline",  # ⬚
++        "number_of_interviews",  # ⬚
++        "interview_format",  # ⬚
++        "assessment_tests",  # ⬚
++        "onboarding_process_overview",  # ⬚
++        "recruitment_contact_phone",  # ⬚
++        "application_instructions",  # ⬚
++    ],
++    8: [  # Step 8: Additional Information & Summary
++        "language_of_ad",  # ★
++        "translation_required",  # ◆
++        "ad_seniority_tone",  # ⬚
++        "ad_length_preference",  # ⬚
++        "desired_publication_channels",  # ⬚
++        "employer_branding_elements",  # ⬚
++        "diversity_inclusion_statement",  # ⬚
++        "legal_disclaimers",  # ⬚
++        "company_awards",  # ⬚
++        "social_media_links",  # ⬚
++        "video_introduction_option",  # ⬚
++        "internal_job_id",  # ⬚
++        "deadline_urgency",  # ⬚
++        "comments_internal",  # ⬚
++    ],
++}
++
++# Fields generated or used internally (not shown in UI steps)
++GENERATED_KEYS: list[str] = [
++    "generated_job_ad",
++    "generated_interview_prep",
++    "generated_email_template",
++    "target_group_analysis",
++    "generated_boolean_query",
++]
+diff --git a/src/utils/llm_utils.py b/vacalyser/utils/llm_utils.py
+similarity index 85%
+rename from src/utils/llm_utils.py
+rename to vacalyser/utils/llm_utils.py
+index 381ef7bab36d7d4a8812379f9619f72496a73c75..7fa4dcbbe22715bab15f968d4c8bd666646f76f4 100644
+--- a/src/utils/llm_utils.py
++++ b/vacalyser/utils/llm_utils.py
+@@ -1,99 +1,114 @@
+ from __future__ import annotations
+ import re
+ import logging
+ from typing import List
+ 
+ import openai
+-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
++from tenacity import (
++    retry,
++    stop_after_attempt,
++    wait_exponential,
++    retry_if_exception_type,
++)
+ 
+ # Vacancy Agent und Konfiguration importieren
+-from src.agents import vacancy_agent
+-from src.config import config
++from vacalyser.services import vacancy_agent
++from vacalyser.utils import config
+ 
+ # Logger konfigurieren
+ logging.basicConfig(level=logging.INFO)
+ logger = logging.getLogger(__name__)
+ 
++
+ def get_role_skills(job_title: str, num_skills: int = 15) -> List[str]:
+     """
+     Ermittelt eine Liste der Top-{num_skills} Skills für den gegebenen Jobtitel über OpenAI.
+     Gibt eine Liste von Skill-Bezeichnungen zurück.
+     """
+     job_title = job_title.strip()
+     if not job_title:
+         return []
+     skills_list: List[str] = []
+     # Prompt für den Assistant (ggf. vordefiniert) abrufen
+     try:
+         assistant_prompt = vacancy_agent.SKILLS_ASSISTANT_PROMPT
+     except AttributeError:
+         assistant_prompt = (
+             "You are an expert career advisor. The user will provide a job title. "
+             f"List the top {num_skills} must-have skills (technical skills and core competencies) "
+             f"that an ideal candidate for the '{job_title}' role should possess. "
+             "Provide the list as bullet points or a comma-separated list, without any additional commentary."
+         )
+     # OpenAI API nutzen
+     messages = [
+         {"role": "system", "content": assistant_prompt},
+-        {"role": "user", "content": f"List {num_skills} must-have skills for a '{job_title}' position."}
++        {
++            "role": "user",
++            "content": f"List {num_skills} must-have skills for a '{job_title}' position.",
++        },
+     ]
+     try:
+         completion = call_with_retry(
+             openai.ChatCompletion.create,
+             model=config.OPENAI_MODEL,
+             messages=messages,
+             temperature=0.5,
+             max_tokens=200,
+         )
+     except Exception as e:
+         logger.error(f"OpenAI API Fehler bei get_role_skills: {e}")
+         return skills_list
+-    raw_output = completion.choices[0].message.content if completion and completion.choices else ""
++    raw_output = (
++        completion.choices[0].message.content
++        if completion and completion.choices
++        else ""
++    )
+     raw_output = (raw_output or "").strip()
+     # Ergebnis-String in Skills-Liste umwandeln
+     if not raw_output:
+         return skills_list
+     if "\n" in raw_output:
+         for line in raw_output.splitlines():
+             line = line.strip()
+             if not line:
+                 continue
+             # Führende Aufzählungszeichen/Nummern entfernen
+-            line = re.sub(r'^(\d+[\.\)]\s*|[-*\u2022]\s*)', '', line).strip()
++            line = re.sub(r"^(\d+[\.\)]\s*|[-*\u2022]\s*)", "", line).strip()
+             if line:
+                 skills_list.append(line)
+     else:
+         parts = [part.strip() for part in raw_output.split(",") if part.strip()]
+         skills_list.extend(parts)
+     # Auf num_skills Einträge begrenzen
+     if len(skills_list) > num_skills:
+         skills_list = skills_list[:num_skills]
+     return skills_list
+ 
++
+ # Wrapper-Funktion mit automatischen Wiederholungen für OpenAI-Aufrufe
+ @retry(
+     reraise=True,
+     stop=stop_after_attempt(3),
+     wait=wait_exponential(min=1, max=4),
+     retry=retry_if_exception_type(
+         (
+             openai.APIConnectionError,
+             openai.APITimeoutError,
+             openai.RateLimitError,
+             openai.APIError,
+         )
+     ),
+ )
+ def _call_with_retry(func, *args, **kwargs):
+     return func(*args, **kwargs)
+ 
++
+ def call_with_retry(func, *args, **kwargs):
+     """
+     Ruft die OpenAI-Funktion *func* mit Retry-Mechanismus auf (wiederholt bei Verbindungs- oder Rate-Limit-Fehlern).
+     """
+     try:
+         return _call_with_retry(func, *args, **kwargs)
+     except Exception as e:
+         logger.error(f"API-Aufruf fehlgeschlagen nach mehreren Versuchen: {e}")
+         raise
+diff --git a/src/utils/summarize.py b/vacalyser/utils/summarize.py
+similarity index 96%
+rename from src/utils/summarize.py
+rename to vacalyser/utils/summarize.py
+index 36ca4d569e15900b222f56c9d06b7b4e127d30f5..5421068f9465d8d1fb02096cffaf4c177696c108 100644
+--- a/src/utils/summarize.py
++++ b/vacalyser/utils/summarize.py
+@@ -1,30 +1,30 @@
+ from __future__ import annotations
+ import logging
+ import openai
+ from .llm_utils import call_with_retry
+-from src.config import config
++from vacalyser.utils import config
+ 
+ logger = logging.getLogger(__name__)
+ 
+ 
+ def summarize_text(text: str, quality: str = "standard") -> str:
+     """Summarize long text blocks using the configured OpenAI model."""
+     if not text:
+         return ""
+     quality_map = {"economy": 0.2, "standard": 0.4, "high": 0.6}
+     temperature = quality_map.get(quality, 0.4)
+     prompt = (
+         "Summarize the following job advertisement text focusing on key duties, "
+         "skills and company information:\n" + text
+     )
+     try:
+         response = call_with_retry(
+             openai.ChatCompletion.create,
+             model=config.OPENAI_MODEL,
+             messages=[{"role": "user", "content": prompt}],
+             temperature=temperature,
+             max_tokens=300,
+         )
+         return response.choices[0].message.content.strip()
+     except Exception as err:
+         logger.error("summarize_text failed: %s", err)
+diff --git a/src/utils/text_cleanup.py b/vacalyser/utils/text_cleanup.py
+similarity index 100%
+rename from src/utils/text_cleanup.py
+rename to vacalyser/utils/text_cleanup.py
+diff --git a/src/utils/tool_registry.py b/vacalyser/utils/tool_registry.py
+similarity index 66%
+rename from src/utils/tool_registry.py
+rename to vacalyser/utils/tool_registry.py
+index a7081ea7bd2c124eec5607691333df28136c8586..9d86ffe9eaaa661cd65c2e407cd0370333209ffa 100644
+--- a/src/utils/tool_registry.py
++++ b/vacalyser/utils/tool_registry.py
+@@ -1,40 +1,52 @@
+-"""
+-src/utils/tool_registry.py
+---------------------------
++"""Utility to register custom tool functions for OpenAI function calling.
++
++Originally from `src/utils/tool_registry.py`.
++
+ 
+ Zentrale Sammlung aller @tool-dekorierten Funktionen.
+ 
+ • @tool(...) registriert eine Funktion samt OpenAI-Schema
+ • list_openai_functions() liefert die Schemaliste für ChatCompletion
+ """
+ 
+ from __future__ import annotations
+ from typing import Callable, Dict, List
+ 
+ # Interner Speicher
+-_TOOL_REGISTRY: Dict[str, dict] = {}          # name -> schema
+-_FUNC_REGISTRY: Dict[str, Callable] = {}      # name -> echte Py-Funktion
++_TOOL_REGISTRY: Dict[str, dict] = {}  # name -> schema
++_FUNC_REGISTRY: Dict[str, Callable] = {}  # name -> echte Py-Funktion
++
+ 
+-def tool(*, name: str, description: str, parameters: dict | None = None,
+-         return_type: str | None = None):
++def tool(
++    *,
++    name: str,
++    description: str,
++    parameters: dict | None = None,
++    return_type: str | None = None,
++):
+     """Decorator zum Registrieren einer Tool-Funktion."""
++
+     def decorator(func: Callable):
+         schema = {
+             "name": name,
+             "description": description,
+-            "parameters": parameters or {"type": "object", "properties": {}, "required": []},
++            "parameters": parameters
++            or {"type": "object", "properties": {}, "required": []},
+         }
+         if return_type:
+             schema["returns"] = return_type
+         _TOOL_REGISTRY[name] = schema
+         _FUNC_REGISTRY[name] = func
+         return func
++
+     return decorator
+ 
++
+ def list_openai_functions() -> List[dict]:
+     """Gibt alle registrierten Schemas (OpenAI-kompatibel) als Liste zurück."""
+     return list(_TOOL_REGISTRY.values())
+ 
++
+ def get_function(name: str) -> Callable | None:
+     """Liefert die echte Python-Funktion zum Tool-Namen."""
+     return _FUNC_REGISTRY.get(name)
+diff --git a/wizard.py b/wizard.py
+deleted file mode 100644
+index a02bee7fcc99b90b35e6c486f3ac9dd4ed1072fe..0000000000000000000000000000000000000000
+--- a/wizard.py
++++ /dev/null
+@@ -1,633 +0,0 @@
+-from __future__ import annotations
+-import streamlit as st
+-import requests
+-from streamlit_sortables import sort_items
+-
+-# Vacalyser-Module und Utilities importieren
+-from src.state.session_state import initialize_session_state
+-from src.logic.trigger_engine import TriggerEngine, build_default_graph
+-from src.tools.file_tools import extract_text_from_file
+-from src.tools.scraping_tools import scrape_company_site
+-from src.utils.text_cleanup import clean_text
+-from src.config.keys import STEP_KEYS
+-from src.agents.vacancy_agent import auto_fill_job_spec
+-
+-# Session State initialisieren (nur beim ersten Aufruf)
+-initialize_session_state()
+-
+-# UI-Sprache aus zentraler Einstellung übernehmen
+-if "language" in st.session_state:
+-    st.session_state["lang"] = "Deutsch" if st.session_state["language"] == "Deutsch" else "English"
+-
+-def _ensure_engine() -> TriggerEngine:
+-    """Initialisiert die TriggerEngine mit Standard-Graph und Prozessoren (einmal pro Session)."""
+-    eng: TriggerEngine | None = st.session_state.get("trigger_engine")
+-    if eng is None:
+-        eng = TriggerEngine()
+-        build_default_graph(eng)
+-        st.session_state["trigger_engine"] = eng
+-    return eng
+-
+-def _clamp_step() -> int:
+-    """Begrenzt den aktuellen wizard_step auf einen Wert zwischen 1 und 8."""
+-    st.session_state["wizard_step"] = max(1, min(8, _int_from_state("wizard_step", 1)))
+-    return st.session_state["wizard_step"]
+-
+-
+-def _int_from_state(key: str, default: int) -> int:
+-    """Safely parse an int from session state or return the default."""
+-    val = st.session_state.get(key)
+-    try:
+-        return default if val is None else int(val)
+-    except (TypeError, ValueError):
+-        return default
+-
+-def fetch_url_text(url: str) -> str:
+-    """Holt den Inhalt der gegebenen URL und liefert bereinigten Text zurück."""
+-    try:
+-        resp = requests.get(url, timeout=10)
+-        resp.raise_for_status()
+-    except Exception as exc:
+-        st.warning(f"Failed to fetch URL: {exc}")
+-        return ""
+-    content_type = resp.headers.get("content-type", "").lower()
+-    if "text/html" in content_type:
+-        data = scrape_company_site(url)
+-        if isinstance(data, dict):
+-            text = (data.get("title", "") or "") + "\n" + (data.get("description", "") or "")
+-        else:
+-            text = str(data)
+-    elif "pdf" in content_type:
+-        text = extract_text_from_file(resp.content, "file.pdf")
+-    elif "officedocument" in content_type or "msword" in content_type:
+-        text = extract_text_from_file(resp.content, "file.docx")
+-    else:
+-        text = resp.text
+-    return clean_text(text or "")
+-
+-def match_and_store_keys(raw_text: str) -> None:
+-    """Fallback-Parser: extrahiert Felder anhand von vordefinierten Labels im Text."""
+-    if not raw_text:
+-        return
+-    labels = {
+-        "job_title": "Job Title:",
+-        "company_name": "Company Name:",
+-        "brand_name": "Brand Name:",
+-        "headquarters_location": "HQ Location:",
+-        "company_website": "Company Website:",
+-        "date_of_employment_start": "Date of Employment Start:",
+-        "job_type": "Job Type:",
+-        "contract_type": "Contract Type:",
+-        "job_level": "Job Level:",
+-        "city": "City",  # "City (Job Location):" manchmal abgekürzt
+-        "team_structure": "Team Structure:",
+-        "role_description": "Role Description:",
+-        "reports_to": "Reports To:",
+-        "supervises": "Supervises:",
+-        "role_type": "Role Type:",
+-        "role_priority_projects": "Role Priority Projects:",
+-        "travel_requirements": "Travel Requirements:",
+-        "must_have_skills": "Requirements:",
+-        "nice_to_have_skills": "Preferred Skills:"
+-    }
+-    for key, label in labels.items():
+-        if label in raw_text:
+-            try:
+-                # Text direkt nach dem Label bis zum Zeilenende extrahieren
+-                value = raw_text.split(label, 1)[1].split("\n", 1)[0].strip().rstrip(":;,.")
+-            except IndexError:
+-                continue
+-            if value:
+-                st.session_state[key] = value
+-
+-def display_step_summary(step: int) -> None:
+-    """Zeigt eine ausklappbare Zusammenfassung aller bisher ausgefüllten Felder und listet fehlende Felder im aktuellen Schritt auf."""
+-    lang = st.session_state.get("lang", "English")
+-    filled = {}
+-    for s in range(1, step + 1):
+-        for field in STEP_KEYS[s]:
+-            if field in ["input_url", "uploaded_file", "parsed_data_raw", "source_language"]:
+-                continue
+-            val = st.session_state.get(field)
+-            if val not in (None, "", []):
+-                filled[field] = val
+-    missing_fields = [
+-        f for f in STEP_KEYS[step]
+-        if f not in ["input_url", "uploaded_file", "parsed_data_raw", "source_language"]
+-        and not st.session_state.get(f)
+-    ]
+-    if filled:
+-        exp_label = "Zusammenfassung ausgefüllter Felder" if lang == "Deutsch" else "Summary of Filled Fields"
+-        with st.expander(exp_label, expanded=False):
+-            # Gruppiere Zusammenfassung nach Schritten
+-            for s in range(1, step + 1):
+-                section_fields = [f for f in STEP_KEYS[s] if f not in ["input_url", "uploaded_file", "parsed_data_raw", "source_language"]]
+-                section_filled = {k: v for k, v in filled.items() if k in section_fields}
+-                if not section_filled:
+-                    continue
+-                st.markdown(f"**Step {s}:**")
+-                for k, v in section_filled.items():
+-                    st.write(f"- **{k}**: {v}")
+-    if missing_fields:
+-        warn_label = "Noch auszufüllende Felder in diesem Schritt:" if lang == "Deutsch" else "Missing fields in this step:"
+-        st.warning(warn_label + " " + ", ".join(missing_fields))
+-
+-def start_discovery_page():
+-    # Schritt 1: Einstieg (Jobtitel/Quelle eingeben)
+-    lang = st.session_state.get("lang", "English")
+-    if lang == "Deutsch":
+-        st.title("🚀 Erstelle die perfekte Stellenbeschreibung")
+-        st.subheader("Von der ersten Idee bis zur fertigen Ausschreibung.")
+-        intro_text = (
+-            "Willkommen bei **RoleCraft**.\n\n"
+-            "Starte mit einem Jobtitel oder lade eine Anzeige hoch.\n"
+-            "Unser KI-gestützter Wizard analysiert, ergänzt fehlende Infos und führt dich sicher zum perfekten Profil."
+-        )
+-        btn_job = "➕ Jobtitel eingeben"
+-        btn_upload = "📂 PDF / DOCX hochladen"
+-    else:
+-        st.title("🚀 Create the Perfect Job Description")
+-        st.subheader("From the first idea to a fully crafted profile.")
+-        intro_text = (
+-            "Welcome to **RoleCraft**.\n\n"
+-            "Start with a job title or upload an ad.\n"
+-            "Our AI-powered wizard analyzes, fills gaps, and guides you seamlessly to a perfect profile."
+-        )
+-        btn_job = "➕ Enter Job Title"
+-        btn_upload = "📂 Upload PDF / DOCX"
+-    st.markdown(intro_text)
+-    st.header("Vacalyzer – Start Discovery")
+-    st.write(
+-        "Gib einen Jobtitel ein und entweder eine URL zu einer bestehenden Stellenanzeige oder lade eine Stellenbeschreibung hoch. "
+-        "Der Assistent analysiert die Inhalte und füllt relevante Felder automatisch aus."
+-        if lang == "Deutsch" else
+-        "Enter a job title and either a link to an existing job ad or upload a job description file. "
+-        "The wizard will analyze the content and auto-fill relevant fields where possible."
+-    )
+-    col1, col2 = st.columns(2)
+-    with col1:
+-        job_title = st.text_input(btn_job, value=st.session_state.get("job_title", ""),
+-                                  placeholder="z.B. Senior Data Scientist" if lang == "Deutsch" else "e.g. Senior Data Scientist")
+-        if job_title:
+-            st.session_state["job_title"] = job_title
+-        input_url = st.text_input("🔗 Stellenanzeigen-URL (optional)" if lang == "Deutsch" else "🔗 Job Ad URL (optional)",
+-                                  value=st.session_state.get("input_url", ""))
+-        if input_url:
+-            st.session_state["input_url"] = input_url
+-    with col2:
+-        uploaded_file = st.file_uploader(btn_upload, type=["pdf", "docx", "txt"])
+-        if uploaded_file is not None:
+-            file_bytes = uploaded_file.read()
+-            raw_text = extract_text_from_file(file_bytes, uploaded_file.name)
+-            raw_text = clean_text(raw_text)
+-            if raw_text:
+-                st.session_state["uploaded_file"] = raw_text
+-                st.success("✅ Datei hochgeladen und Text extrahiert." if lang == "Deutsch" else "✅ File uploaded and text extracted.")
+-            else:
+-                st.error("❌ Konnte den Text aus der Datei nicht extrahieren." if lang == "Deutsch" else "❌ Failed to extract text from the uploaded file.")
+-    analyze_clicked = st.button("🔎 Analysieren" if lang == "Deutsch" else "🔎 Analyze Sources")
+-    if analyze_clicked:
+-        raw_text = ""
+-        if st.session_state.get("uploaded_file"):
+-            raw_text = st.session_state["uploaded_file"]
+-        elif st.session_state.get("input_url"):
+-            raw_text = fetch_url_text(st.session_state["input_url"])
+-        if not raw_text:
+-            st.warning("⚠️ Bitte gib eine gültige URL oder lade eine Datei hoch." if lang == "Deutsch" else "⚠️ Please provide a valid URL or upload a file.")
+-            return
+-        # Sprache der Quelle grob erkennen (Deutsch vs. Englisch)
+-        sample = raw_text[:500].lower()
+-        if sample.count(" der ") + sample.count(" die ") + sample.count(" und ") > sample.count(" the "):
+-            st.session_state["source_language"] = "Deutsch"
+-        else:
+-            st.session_state["source_language"] = "English"
+-        # Rohtext im Session State speichern & KI-Analyse durchführen
+-        st.session_state["parsed_data_raw"] = raw_text
+-        try:
+-            result = auto_fill_job_spec(
+-                input_url=st.session_state.get("input_url", ""),
+-                file_bytes=raw_text.encode("utf-8") if raw_text else None,
+-                file_name=uploaded_file.name if uploaded_file else "",
+-                summary_quality="standard"
+-            )
+-            if result:
+-                # Automatisch ausgefüllte Felder in Session State übernehmen
+-                for key, value in result.items():
+-                    if key in st.session_state and value not in (None, ""):
+-                        if isinstance(value, list):
+-                            st.session_state[key] = "\n".join(str(v) for v in value if v)
+-                        else:
+-                            st.session_state[key] = value
+-                # TriggerEngine benachrichtigen, damit abhängige Felder berechnet werden
+-                for k in result.keys():
+-                    _ensure_engine().notify_change(k, st.session_state)
+-                st.success("🎯 Analyse abgeschlossen! Wichtige Felder wurden automatisch ausgefüllt." if lang == "Deutsch" else "🎯 Analysis complete! Key details have been auto-filled.")
+-            else:
+-                # KI-Parsing lieferte nichts -> Fallback mittels Stichwort-Suche
+-                match_and_store_keys(raw_text)
+-                st.info("⚠️ KI-Analyse nicht verfügbar – wichtige Felder anhand von Schlagworten ausgefüllt." if lang == "Deutsch" else "⚠️ AI extraction not available – applied basic extraction for key fields.")
+-            st.session_state.setdefault("trace_events", []).append("Auto-extracted fields from provided job description.")
+-        except Exception as e:
+-            st.error(f"❌ Analyse fehlgeschlagen: {e}" if lang == "Deutsch" else f"❌ Analysis failed: {e}")
+-
+-def _handle_static_step(step: int, render_func):
+-    """Verarbeitet einen statischen Schritt: Speichert Eingaben und aktualisiert abhängige Felder."""
+-    lang = st.session_state.get("lang", "English")
+-    render_vals = render_func()
+-    # Eingegebene Werte speichern und TriggerEngine benachrichtigen
+-    for k, v in render_vals.items():
+-        st.session_state[k] = v
+-        _ensure_engine().notify_change(k, st.session_state)
+-    # Zusammenfassung der bisher ausgefüllten Felder anzeigen
+-    display_step_summary(step)
+-    # Button zum nächsten Schritt
+-    if st.button("Weiter zu Schritt {}".format(step + 1) if lang == "Deutsch" else "Continue to Step {}".format(step + 1)):
+-        st.session_state["wizard_step"] = step + 1
+-
+-# Schritte 2–7: Formulareingaben
+-def render_step2_static():
+-    lang = st.session_state.get("lang", "English")
+-    st.title("Schritt 2: Grundlegende Stellen- & Firmendaten" if lang == "Deutsch" else "Step 2: Basic Job & Company Info")
+-    display_step_summary(2)
+-    company_name = st.text_input("Unternehmensname" if lang == "Deutsch" else "Company Name",
+-                                 value=st.session_state.get("company_name", ""),
+-                                 placeholder="z.B. Tech Corp GmbH" if lang == "Deutsch" else "e.g. Tech Corp Ltd.",
+-                                 help="Name des einstellenden Unternehmens." if lang == "Deutsch" else "Official name of the hiring company.")
+-    brand_name = st.text_input("Markenname (falls abweichend)" if lang == "Deutsch" else "Brand Name (if different)",
+-                               value=st.session_state.get("brand_name", ""),
+-                               placeholder="z.B. Mutterfirma AG" if lang == "Deutsch" else "e.g. Parent Company Inc.",
+-                               help="Falls unter einem anderen Marken- oder Firmennamen ausgeschrieben." if lang == "Deutsch" else "If the job is advertised under a different brand or subsidiary name.")
+-    headquarters_location = st.text_input("Hauptsitz (Ort)" if lang == "Deutsch" else "Headquarters Location",
+-                                          value=st.session_state.get("headquarters_location", ""),
+-                                          placeholder="z.B. Berlin, Deutschland" if lang == "Deutsch" else "e.g. Berlin, Germany",
+-                                          help="Stadt und Land des Firmensitzes." if lang == "Deutsch" else "City and country of the company's headquarters.")
+-    company_website = st.text_input("Webseite des Unternehmens" if lang == "Deutsch" else "Company Website",
+-                                    value=st.session_state.get("company_website", ""),
+-                                    placeholder="z.B. https://firma.de" if lang == "Deutsch" else "e.g. https://company.com")
+-    date_of_start = st.text_input("Bevorzugtes Eintrittsdatum" if lang == "Deutsch" else "Preferred Start Date",
+-                                  value=st.session_state.get("date_of_employment_start", ""),
+-                                  placeholder="z.B. ab sofort oder 2025-01-15" if lang == "Deutsch" else "e.g. ASAP or 2025-01-15")
+-    job_type = st.selectbox("Art der Stelle" if lang == "Deutsch" else "Job Type",
+-                             ["Full-Time", "Part-Time", "Internship", "Freelance", "Volunteer", "Other"], index=0)
+-    contract_type = st.selectbox("Vertragsart" if lang == "Deutsch" else "Contract Type",
+-                                 ["Permanent", "Fixed-Term", "Contract", "Other"], index=0)
+-    job_level = st.selectbox("Karrierestufe" if lang == "Deutsch" else "Job Level",
+-                              ["Entry-level", "Mid-level", "Senior", "Director", "C-level", "Other"], index=0)
+-    city = st.text_input("Dienstort (Stadt)" if lang == "Deutsch" else "City (Job Location)",
+-                         value=st.session_state.get("city", ""),
+-                         placeholder="z.B. München" if lang == "Deutsch" else "e.g. London")
+-    team_structure = st.text_area("Teamstruktur" if lang == "Deutsch" else "Team Structure",
+-                                  value=st.session_state.get("team_structure", ""),
+-                                  placeholder="Beschreibe den Teamaufbau, Berichtslinien, etc." if lang == "Deutsch" else "Describe the team setup, reporting hierarchy, etc.")
+-    return {
+-        "company_name": company_name,
+-        "brand_name": brand_name,
+-        "headquarters_location": headquarters_location,
+-        "company_website": company_website,
+-        "date_of_employment_start": date_of_start,
+-        "job_type": job_type,
+-        "contract_type": contract_type,
+-        "job_level": job_level,
+-        "city": city,
+-        "team_structure": team_structure
+-    }
+-
+-def render_step3_static():
+-    lang = st.session_state.get("lang", "English")
+-    st.title("Schritt 3: Rollenbeschreibung" if lang == "Deutsch" else "Step 3: Role Definition")
+-    display_step_summary(3)
+-    role_description = st.text_area("Rollenbeschreibung" if lang == "Deutsch" else "Role Description",
+-                                    value=st.session_state.get("role_description", ""),
+-                                    placeholder="Kurzer Überblick über die Rolle." if lang == "Deutsch" else "High-level summary of the role.")
+-    reports_to = st.text_input("Berichtet an" if lang == "Deutsch" else "Reports To",
+-                               value=st.session_state.get("reports_to", ""),
+-                               placeholder="Position, an die diese Rolle berichtet" if lang == "Deutsch" else "Position this role reports to")
+-    supervises = st.text_area("Verantwortet (führt)" if lang == "Deutsch" else "Supervises",
+-                              value=st.session_state.get("supervises", ""),
+-                              placeholder="Liste der Positionen/Teams, für die diese Rolle verantwortlich ist" if lang == "Deutsch" else "List positions or teams this role supervises")
+-    role_type = st.selectbox("Rollentyp" if lang == "Deutsch" else "Role Type",
+-                              ["Individual Contributor", "Team Lead", "Manager", "Director", "Executive", "Other"], index=0)
+-    role_priority_projects = st.text_area("Priorisierte Projekte" if lang == "Deutsch" else "Priority Projects",
+-                                          value=st.session_state.get("role_priority_projects", ""),
+-                                          placeholder="Aktuell wichtige Projekte oder Initiativen." if lang == "Deutsch" else "Current key projects or initiatives for this role.")
+-    travel_requirements = st.text_input("Reisebereitschaft" if lang == "Deutsch" else "Travel Requirements",
+-                                        value=st.session_state.get("travel_requirements", ""),
+-                                        placeholder="z.B. 20% Reisetätigkeit" if lang == "Deutsch" else "e.g. Up to 20% travel required")
+-    return {
+-        "role_description": role_description,
+-        "reports_to": reports_to,
+-        "supervises": supervises,
+-        "role_type": role_type,
+-        "role_priority_projects": role_priority_projects,
+-        "travel_requirements": travel_requirements
+-    }
+-
+-def render_step4_static():
+-    lang = st.session_state.get("lang", "English")
+-    st.title("Schritt 4: Aufgaben & Verantwortlichkeiten" if lang == "Deutsch" else "Step 4: Tasks & Responsibilities")
+-    display_step_summary(4)
+-    task_list = st.text_area("Aufgabenliste" if lang == "Deutsch" else "Task List",
+-                              value=st.session_state.get("task_list", ""),
+-                              placeholder="Liste der Kernaufgaben oder Zuständigkeiten." if lang == "Deutsch" else "List of key tasks or responsibilities.")
+-    key_responsibilities = st.text_area("Hauptverantwortlichkeiten" if lang == "Deutsch" else "Key Responsibilities",
+-                                        value=st.session_state.get("key_responsibilities", ""),
+-                                        placeholder="z.B. Projektleitung, Teamkoordination" if lang == "Deutsch" else "e.g. Project management, team coordination")
+-    return {
+-        "task_list": task_list,
+-        "key_responsibilities": key_responsibilities
+-    }
+-
+-def render_step5_static():
+-    lang = st.session_state.get("lang", "English")
+-    st.title(
+-        "Schritt 5: Fähigkeiten & Kompetenzen" if lang == "Deutsch" else "Step 5: Skills & Competencies"
+-    )
+-    display_step_summary(5)
+-
+-    st.write(
+-        "Ziehe deine eingegebenen Fähigkeiten einfach zwischen die Spalten" if lang == "Deutsch" else "Drag your skills between the columns below."
+-    )
+-
+-    new_skill = st.text_input(
+-        "Neuen Skill hinzufügen" if lang == "Deutsch" else "Add new skill",
+-        key="skill_input",
+-    )
+-    add_to_must = st.checkbox(
+-        "Zu Muss" if lang == "Deutsch" else "To Must-Have",
+-        value=True,
+-        key="add_to_must",
+-    )
+-    if st.button("Skill speichern" if lang == "Deutsch" else "Save skill") and new_skill:
+-        target = "must_have_skills_list" if add_to_must else "nice_to_have_skills_list"
+-        st.session_state.setdefault(target, []).append(new_skill)
+-        st.session_state["skill_input"] = ""
+-
+-    must_list = st.session_state.get("must_have_skills_list", [])
+-    nice_list = st.session_state.get("nice_to_have_skills_list", [])
+-
+-    sorted_lists = sort_items(
+-        [
+-            {"header": "Muss" if lang == "Deutsch" else "Must-Have", "items": must_list},
+-            {"header": "Nice-to-Have", "items": nice_list},
+-        ],
+-        multi_containers=True,
+-    )
+-
+-    st.session_state["must_have_skills_list"] = sorted_lists[0]["items"]
+-    st.session_state["nice_to_have_skills_list"] = sorted_lists[1]["items"]
+-
+-    must_have_skills = "\n".join(st.session_state["must_have_skills_list"])
+-    nice_to_have_skills = "\n".join(st.session_state["nice_to_have_skills_list"])
+-    certifications_required = st.text_input("Erforderliche Zertifikate" if lang == "Deutsch" else "Certifications Required",
+-                                            value=st.session_state.get("certifications_required", ""),
+-                                            placeholder="z.B. PMP, CFA" if lang == "Deutsch" else "e.g. PMP, CFA")
+-    language_requirements = st.text_input("Sprachkenntnisse" if lang == "Deutsch" else "Language Requirements",
+-                                          value=st.session_state.get("language_requirements", ""),
+-                                          placeholder="z.B. Fließend Deutsch und Englisch" if lang == "Deutsch" else "e.g. Fluent in German and English")
+-    return {
+-        "must_have_skills": must_have_skills,
+-        "nice_to_have_skills": nice_to_have_skills,
+-        "certifications_required": certifications_required,
+-        "language_requirements": language_requirements
+-    }
+-
+-def render_step6_static():
+-    lang = st.session_state.get("lang", "English")
+-    st.title("Schritt 6: Vergütung & Benefits" if lang == "Deutsch" else "Step 6: Compensation & Benefits")
+-    display_step_summary(6)
+-    salary_range = st.text_input("Gehaltsrahmen" if lang == "Deutsch" else "Salary Range",
+-                                 value=st.session_state.get("salary_range", ""),
+-                                 placeholder="z.B. 50.000 – 60.000 EUR" if lang == "Deutsch" else "e.g. 50,000 – 60,000 EUR")
+-    currency = st.text_input("Währung" if lang == "Deutsch" else "Currency",
+-                              value=st.session_state.get("currency", ""),
+-                              placeholder="z.B. EUR" if lang == "Deutsch" else "e.g. EUR")
+-    pay_frequency = st.text_input("Zahlungsintervall" if lang == "Deutsch" else "Pay Frequency",
+-                                  value=st.session_state.get("pay_frequency", ""),
+-                                  placeholder="z.B. jährlich" if lang == "Deutsch" else "e.g. annual")
+-    bonus_scheme = st.text_input("Bonusregelung" if lang == "Deutsch" else "Bonus Scheme",
+-                                 value=st.session_state.get("bonus_scheme", ""),
+-                                 placeholder="z.B. Teilnahme am jährlichen Bonusprogramm" if lang == "Deutsch" else "e.g. Eligible for annual performance bonus")
+-    commission_structure = st.text_input("Provisionsmodell" if lang == "Deutsch" else "Commission Structure",
+-                                         value=st.session_state.get("commission_structure", ""),
+-                                         placeholder="z.B. Umsatzabhängige Provision" if lang == "Deutsch" else "e.g. Commission based on sales performance")
+-    vacation_days = st.slider(
+-        "Urlaubstage" if lang == "Deutsch" else "Vacation Days",
+-        20,
+-        40,
+-        _int_from_state("vacation_days", 30),
+-    )
+-    vacation_days_str = str(vacation_days)
+-    remote_possible = st.checkbox(
+-        "Remote-Arbeit möglich?" if lang == "Deutsch" else "Remote work possible?",
+-        value=str(st.session_state.get("remote_work_policy", "")).lower() in ("ja", "yes", "true"),
+-    )
+-    remote_work_policy = "Ja" if remote_possible and lang == "Deutsch" else (
+-        "Yes" if remote_possible else "No"
+-    )
+-    flexible_hours = st.text_input(
+-        "Flexible Arbeitszeiten" if lang == "Deutsch" else "Flexible Hours",
+-        value=st.session_state.get("flexible_hours", ""),
+-        placeholder="z.B. Ja (Gleitzeit möglich)" if lang == "Deutsch" else "e.g. Yes (flexible schedule)",
+-    )
+-    relocation_possible = st.checkbox(
+-        "Umzugsunterstützung?" if lang == "Deutsch" else "Relocation assistance?",
+-        value=str(st.session_state.get("relocation_assistance", "")).lower() in ("ja", "yes", "true"),
+-    )
+-    relocation_assistance = "Ja" if relocation_possible and lang == "Deutsch" else (
+-        "Yes" if relocation_possible else "No"
+-    )
+-    return {
+-        "salary_range": salary_range,
+-        "currency": currency,
+-        "pay_frequency": pay_frequency,
+-        "bonus_scheme": bonus_scheme,
+-        "commission_structure": commission_structure,
+-        "vacation_days": vacation_days_str,
+-        "remote_work_policy": remote_work_policy,
+-        "flexible_hours": flexible_hours,
+-        "relocation_assistance": relocation_assistance
+-    }
+-
+-def render_step7_static():
+-    lang = st.session_state.get("lang", "English")
+-    st.title("Schritt 7: Recruiting-Prozess" if lang == "Deutsch" else "Step 7: Recruitment Process")
+-    display_step_summary(7)
+-    recruitment_contact_email = st.text_input("Kontakt-Email" if lang == "Deutsch" else "Recruitment Contact Email",
+-                                              value=st.session_state.get("recruitment_contact_email", ""),
+-                                              placeholder="z.B. hr@firma.de" if lang == "Deutsch" else "e.g. hr@company.com")
+-    recruitment_steps = st.text_area("Ablauf der Bewerbungsrunden" if lang == "Deutsch" else "Recruitment Steps",
+-                                     value=st.session_state.get("recruitment_steps", ""),
+-                                     placeholder="Beschreibung des Auswahlverfahrens" if lang == "Deutsch" else "Description of the interview/application steps")
+-    recruitment_timeline = st.text_input("Geplanter Zeitrahmen" if lang == "Deutsch" else "Recruitment Timeline",
+-                                         value=st.session_state.get("recruitment_timeline", ""),
+-                                         placeholder="z.B. 6 Wochen bis zur Einstellung" if lang == "Deutsch" else "e.g. 6 weeks from first interview to offer")
+-    number_of_interviews = st.text_input("Anzahl der Interviews" if lang == "Deutsch" else "Number of Interviews",
+-                                         value=st.session_state.get("number_of_interviews", ""),
+-                                         placeholder="z.B. 3 Runden" if lang == "Deutsch" else "e.g. 3 rounds")
+-    interview_format = st.text_input("Interview-Format" if lang == "Deutsch" else "Interview Format",
+-                                     value=st.session_state.get("interview_format", ""),
+-                                     placeholder="z.B. Videokonferenz" if lang == "Deutsch" else "e.g. Video conference")
+-    assessment_tests = st.text_input("Einstellungstests" if lang == "Deutsch" else "Assessment Tests",
+-                                     value=st.session_state.get("assessment_tests", ""),
+-                                     placeholder="z.B. Programmieraufgabe, Präsentation" if lang == "Deutsch" else "e.g. Coding challenge, presentation")
+-    onboarding_process_overview = st.text_area("Onboarding-Prozess" if lang == "Deutsch" else "Onboarding Process Overview",
+-                                               value=st.session_state.get("onboarding_process_overview", ""),
+-                                               placeholder="Kurze Beschreibung des Onboarding-Prozesses" if lang == "Deutsch" else "Brief description of the onboarding process")
+-    recruitment_contact_phone = st.text_input("Kontakt-Telefon" if lang == "Deutsch" else "Recruitment Contact Phone",
+-                                              value=st.session_state.get("recruitment_contact_phone", ""),
+-                                              placeholder="z.B. +49 170 1234567")
+-    application_instructions = st.text_area("Hinweise zur Bewerbung" if lang == "Deutsch" else "Application Instructions",
+-                                            value=st.session_state.get("application_instructions", ""),
+-                                            placeholder="z.B. Ansprechpartner und benötigte Unterlagen" if lang == "Deutsch" else "e.g. Contact person and required documents")
+-    return {
+-        "recruitment_contact_email": recruitment_contact_email,
+-        "recruitment_steps": recruitment_steps,
+-        "recruitment_timeline": recruitment_timeline,
+-        "number_of_interviews": number_of_interviews,
+-        "interview_format": interview_format,
+-        "assessment_tests": assessment_tests,
+-        "onboarding_process_overview": onboarding_process_overview,
+-        "recruitment_contact_phone": recruitment_contact_phone,
+-        "application_instructions": application_instructions
+-    }
+-
+-def render_step8():
+-    lang = st.session_state.get("lang", "English")
+-    st.title("Schritt 8: Weitere Angaben & Zusammenfassung" if lang == "Deutsch" else "Step 8: Additional Information & Summary")
+-    display_step_summary(8)
+-    st.subheader("Abschließende Einstellungen" if lang == "Deutsch" else "Final Settings")
+-    ad_seniority_tone = st.text_input(
+-        "Ton/Stil der Anzeige" if lang == "Deutsch" else "Ad Tone/Style",
+-        value=st.session_state.get("ad_seniority_tone", ""),
+-        placeholder="z.B. Professionell und förmlich" if lang == "Deutsch" else "e.g. Professional and formal",
+-        help=(
+-            "Gewünschter Tonfall/Schreibstil der Anzeige (z.B. locker, formell)."
+-            if lang == "Deutsch"
+-            else "Desired tone or style for the job ad (e.g. formal, casual, friendly)."
+-        ),
+-    )
+-    st.session_state["ad_seniority_tone"] = ad_seniority_tone
+-    ad_length_preference = st.text_input(
+-        "Präferenz der Anzeigentextlänge" if lang == "Deutsch" else "Ad Length Preference",
+-        value=st.session_state.get("ad_length_preference", ""),
+-        placeholder="z.B. Kurz und prägnant" if lang == "Deutsch" else "e.g. Short and concise",
+-        help=(
+-            "Präferenz für die Länge der Stellenbeschreibung (knapp vs. ausführlich)."
+-            if lang == "Deutsch"
+-            else "Preference for the length/detail level of the job description (concise vs. detailed)."
+-        ),
+-    )
+-    st.session_state["ad_length_preference"] = ad_length_preference
+-    # Sprache der finalen Anzeige auswählen (Deutsch/Englisch)
+-    language_options = ["Deutsch", "Englisch"] if lang == "Deutsch" else ["German", "English"]
+-    default_idx = 0 if st.session_state.get("language_of_ad", "English") in ["German", "Deutsch"] else 1
+-    selected_lang = st.selectbox("Sprache der Ausschreibung" if lang == "Deutsch" else "Language of Ad",
+-                                 options=language_options, index=(0 if default_idx == 0 else 1))
+-    st.session_state["language_of_ad"] = "German" if selected_lang in ["German", "Deutsch"] else "English"
+-    translation_required = st.checkbox("Übersetzung der Anzeige benötigt?" if lang == "Deutsch" else "Translation required?",
+-                                       value=bool(st.session_state.get("translation_required", False)))
+-    st.session_state["translation_required"] = translation_required
+-    desired_publication_channels = st.text_input(
+-        "Gewünschte Veröffentlichungskanäle" if lang == "Deutsch" else "Desired Publication Channels",
+-        value=st.session_state.get("desired_publication_channels", ""),
+-        placeholder="z.B. LinkedIn, Firmenwebsite" if lang == "Deutsch" else "e.g. LinkedIn, Company careers page",
+-        help=(
+-            "Kanäle/Plattformen, auf denen die Stelle veröffentlicht werden soll."
+-            if lang == "Deutsch"
+-            else "Channels where the job ad will be posted (job boards, company site, etc)."
+-        ),
+-    )
+-    st.session_state["desired_publication_channels"] = desired_publication_channels
+-    employer_branding_elements = st.text_input(
+-        "Employer-Branding-Elemente" if lang == "Deutsch" else "Employer Branding Elements",
+-        value=st.session_state.get("employer_branding_elements", ""),
+-        placeholder="z.B. Unternehmensmission, Werte" if lang == "Deutsch" else "e.g. Company mission statement, core values",
+-        help=(
+-            "Besondere Merkmale der Arbeitgebermarke (Mission, Werte, Slogan, etc.)."
+-            if lang == "Deutsch"
+-            else "Company branding elements to include (mission, values, tagline, etc.)."
+-        ),
+-    )
+-    st.session_state["employer_branding_elements"] = employer_branding_elements
+-    diversity_inclusion_statement = st.text_area(
+-        "Diversity & Inclusion Statement",
+-        value=st.session_state.get("diversity_inclusion_statement", ""),
+-        placeholder="Optionale Passage zu Diversität und Inklusion" if lang == "Deutsch" else "Optional statement on diversity and inclusion",
+-    )
+-    st.session_state["diversity_inclusion_statement"] = diversity_inclusion_statement
+-    legal_disclaimers = st.text_area(
+-        "Rechtliche Hinweise" if lang == "Deutsch" else "Legal Disclaimers",
+-        value=st.session_state.get("legal_disclaimers", ""),
+-        placeholder="Rechtliche Hinweise oder Disclaimer" if lang == "Deutsch" else "Any legal disclaimers or notices",
+-    )
+-    st.session_state["legal_disclaimers"] = legal_disclaimers
+-    company_awards = st.text_input(
+-        "Auszeichnungen des Unternehmens" if lang == "Deutsch" else "Company Awards",
+-        value=st.session_state.get("company_awards", ""),
+-        placeholder="z.B. Top-Arbeitgeber 2023" if lang == "Deutsch" else "e.g. Best Employer 2023",
+-    )
+-    st.session_state["company_awards"] = company_awards
+-    social_media_links = st.text_input(
+-        "Social-Media-Links",
+-        value=st.session_state.get("social_media_links", ""),
+-        placeholder="z.B. LinkedIn, XING, Twitter" if lang == "Deutsch" else "e.g. LinkedIn, Twitter profiles",
+-    )
+-    st.session_state["social_media_links"] = social_media_links
+-    video_introduction_option = st.text_input(
+-        "Option für Videoeinleitung" if lang == "Deutsch" else "Video Introduction Option",
+-        value=st.session_state.get("video_introduction_option", ""),
+-        placeholder="z.B. Link zu einem Company-Video" if lang == "Deutsch" else "e.g. Link to a company introduction video",
+-    )
+-    st.session_state["video_introduction_option"] = video_introduction_option
+-    internal_job_id = st.text_input(
+-        "Interne Job-ID",
+-        value=st.session_state.get("internal_job_id", ""),
+-        placeholder="Interne Referenznummer der Stelle",
+-    )
+-    st.session_state["internal_job_id"] = internal_job_id
+-    deadline_urgency = st.text_input(
+-        "Bewerbungsfrist/Dringlichkeit" if lang == "Deutsch" else "Application Deadline/Urgency",
+-        value=st.session_state.get("deadline_urgency", ""),
+-        placeholder="z.B. Einstellung bis Q4 angepeilt" if lang == "Deutsch" else "e.g. Target to hire by Q4",
+-    )
+-    st.session_state["deadline_urgency"] = deadline_urgency
+-    comments_internal = st.text_area(
+-        "Interne Kommentare" if lang == "Deutsch" else "Internal Comments",
+-        value=st.session_state.get("comments_internal", ""),
+-        placeholder="Nur intern: Notizen oder Kommentare zum Profil",
+-    )
+-    st.session_state["comments_internal"] = comments_internal
+-    st.success("🎉 Alle Schritte abgeschlossen! Überprüfe die Angaben und erstelle nun die Stellenanzeige." if lang == "Deutsch" else "🎉 All steps completed! Review all inputs and proceed to generate the job description.")
+-
+-def run_wizard():
+-    """Haupt-Einstiegspunkt zum Rendern des Wizards basierend auf dem aktuellen Schritt."""
+-    step = _clamp_step()
+-    _ensure_engine()
+-    if step == 1:
+-        start_discovery_page()
+-    elif step == 2:
+-        _handle_static_step(2, render_step2_static)
+-    elif step == 3:
+-        _handle_static_step(3, render_step3_static)
+-    elif step == 4:
+-        _handle_static_step(4, render_step4_static)
+-    elif step == 5:
+-        _handle_static_step(5, render_step5_static)
+-    elif step == 6:
+-        _handle_static_step(6, render_step6_static)
+-    elif step == 7:
+-        _handle_static_step(7, render_step7_static)
+-    elif step == 8:
+-        render_step8()
+-    _nav(step)
+-
+-def _nav(step: int):
+-    """Navigations-Buttons für Weiter/Zurück je nach aktuellem Schritt anzeigen."""
+-    lang = st.session_state.get("lang", "English")
+-    if step < 8:
+-        st.button("Weiter" if lang == "Deutsch" else "Next",
+-                  on_click=lambda: st.session_state.update({"wizard_step": step + 1}), key=f"next_{step}")
+-    if step > 1:
+-        st.button("Zurück" if lang == "Deutsch" else "Back",
+-                  on_click=lambda: st.session_state.update({"wizard_step": step - 1}), key=f"back_{step}")
+-

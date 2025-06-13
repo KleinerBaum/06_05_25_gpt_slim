@@ -41,7 +41,22 @@ pip install -r requirements.txt
 Create any needed folders (e.g. `uploads/`, `logs/`) before starting Streamlit:
 
 ```bash
-streamlit run app.py
+streamlit run vacalyser/app.py
+```
+
+## Project Structure
+
+```
+vacalyser/
+├── app.py
+├── pages/
+├── components/
+├── logic/
+├── services/
+├── models/
+├── state/
+├── utils/
+└── tests/
 ```
 
 ## ESCO API Prompt Templates
