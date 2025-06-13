@@ -3,7 +3,6 @@ openai
 requests
 networkx
 pymupdf==1.25.5       
-python-docx   
 beautifulsoup4
 tenacity
 pydantic
@@ -12,3 +11,4 @@ langchain
 pdfminer.six
 python-dotenv
 streamlit-sortables
+python-docx>=1.1  
