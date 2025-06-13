@@ -230,3 +230,28 @@ def auto_fill_job_spec(
             return {}
     # Als Python-Dictionary zurückgeben
     return job_spec.model_dump()
+
+
+def fix_json_output(raw_json: str) -> dict:
+    """Try to repair JSON string to match JobSpec schema."""
+    from models.job_models import JobSpec
+
+    try:
+        return JobSpec.model_validate_json(raw_json).model_dump()
+    except Exception:
+        repair_prompt = (
+            "Fix the following JSON so it matches the JobSpec schema and is valid:"
+            "\n" + raw_json
+        )
+        try:
+            resp = openai.ChatCompletion.create(  # type: ignore[attr-defined]
+                model=config.OPENAI_MODEL,
+                messages=[{"role": "user", "content": repair_prompt}],
+                temperature=0,
+                max_tokens=1200,
+            )
+            content = resp.choices[0].message.content.strip()
+            return JobSpec.model_validate_json(content).model_dump()
+        except Exception as err:
+            logger.error(f"JSON repair failed: {err}")
+            return {}
