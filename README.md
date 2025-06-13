@@ -6,13 +6,30 @@ Install dependencies before running the app:
 ```bash
 pip install -r requirements.txt
 ```
-<<<<<<< codex/fix-project-structure-and-update-imports
 
 Create any needed folders (e.g. `uploads/`, `logs/`) before starting Streamlit:
 
 ```bash
 streamlit run app.py
 ```
+
+### API Keys
+
+AI-powered features require an OpenAI API key. Create a `.streamlit/secrets.toml` file and add your credentials there. Example:
+
+```toml
+[openai]
+OPENAI_API_KEY = "YOUR_OPENAI_KEY"
+OPENAI_ORG_ID = "YOUR_OPENAI_ORG_ID"
+
+[database]
+DATABASE_URL = "postgresql://user:password@host/db"
+
+[general]
+SECRET_KEY = "replace-me"
+```
+
+You can also set the variables via a `.env` file during local development.
 
 ## Project Structure
 
@@ -32,5 +49,3 @@ streamlit run app.py
 ## ESCO API Prompt Templates
 
 A collection of ready-made prompts for querying the ESCO API is available in [docs/esco_api_prompts.md](docs/esco_api_prompts.md).
-=======
->>>>>>> main
