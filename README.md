@@ -29,7 +29,17 @@ DATABASE_URL = "postgresql://user:password@host/db"
 SECRET_KEY = "replace-me"
 ```
 
-You can also set the variables via a `.env` file during local development.
+You can also place these values in a `.env` file and load them in Python via
+`os.getenv`.
+
+### Environment Variables
+
+| Variable | Example | Purpose |
+| --- | --- | --- |
+| STREAMLIT_ENV | development | environment switch |
+| LANGUAGE | en | default UI language |
+| DEFAULT_MODEL | gpt-4o | base model name |
+| VECTOR_STORE_PATH | ./vector_store | path to vector DB |
 
 ## Project Structure
 
