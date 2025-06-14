@@ -8,7 +8,15 @@ from models.job_models import JobSpec
 
 
 def parse_job_spec(text: str) -> JobSpec:
-    """Parse a raw job ad text using simple regex patterns."""
+    """Parse raw job-ad text into a ``JobSpec`` object.
+
+    Args:
+        text: Job-ad text to parse.
+
+    Returns:
+        A ``JobSpec`` instance populated with title, company and salary if
+        detected.
+    """
     if not text:
         return JobSpec()
     title_match = re.search(r"(?i)\b(job|position|role)\s*[:\-]\s*(.+)", text)
@@ -24,7 +32,14 @@ def parse_job_spec(text: str) -> JobSpec:
 
 
 def normalize_job_title(title: str) -> str:
-    """Normalize job titles by stripping levels and synonyms."""
+    """Normalize job titles by removing levels and common prefixes.
+
+    Args:
+        title: Original job title string.
+
+    Returns:
+        Normalized title in title case.
+    """
     if not title:
         return ""
     title = title.lower()
@@ -34,7 +49,14 @@ def normalize_job_title(title: str) -> str:
 
 
 def progress_percentage(state: dict[str, object]) -> float:
-    """Return completion percentage across all wizard fields."""
+    """Return completion percentage across all wizard fields.
+
+    Args:
+        state: Current wizard state values.
+
+    Returns:
+        Percentage of filled fields rounded to one decimal place.
+    """
     from utils.keys import STEP_KEYS
 
     total = sum(len(v) for v in STEP_KEYS.values())
@@ -47,7 +69,15 @@ def progress_percentage(state: dict[str, object]) -> float:
 
 
 def highlight_keywords(text: str, keywords: List[str]) -> str:
-    """Wrap occurrences of keywords with ** for emphasis."""
+    """Emphasize keywords by wrapping them in ``**`` markers.
+
+    Args:
+        text: Source text where keywords should be highlighted.
+        keywords: List of keywords to highlight.
+
+    Returns:
+        Text with keywords wrapped by ``**`` for Markdown emphasis.
+    """
     if not text or not keywords:
         return text
     pattern = re.compile(r"(" + "|".join(map(re.escape, keywords)) + r")", re.I)

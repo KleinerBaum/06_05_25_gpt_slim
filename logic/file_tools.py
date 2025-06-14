@@ -52,12 +52,26 @@ logger = logging.getLogger(__name__)
 
 
 def _ext(filename: str) -> str:
-    """liefert Dateiendung (ohne Punkt) in Kleinbuchstaben."""
+    """Return the lowercase extension of ``filename``.
+
+    Args:
+        filename: Name of the file including extension.
+
+    Returns:
+        The file extension without the leading dot in lowercase.
+    """
     return os.path.splitext(filename)[1].lower().lstrip(".")
 
 
 def _extract_text_pdf(data: bytes) -> str:
-    """Extrahiert Text aus PDF-Bytes mittels PyMuPDF."""
+    """Extract text from PDF bytes using PyMuPDF.
+
+    Args:
+        data: Raw PDF bytes.
+
+    Returns:
+        Extracted UTF-8 text with line breaks preserved.
+    """
     text_parts: list[str] = []
     with fitz.open(stream=data, filetype="pdf") as doc:
         for page in doc:
@@ -66,7 +80,14 @@ def _extract_text_pdf(data: bytes) -> str:
 
 
 def _extract_text_docx(data: bytes) -> str:
-    """Extrahiert Text aus DOCX-Bytes ohne Zwischenspeichern auf Platte."""
+    """Extract text from DOCX bytes without temporary files.
+
+    Args:
+        data: Raw DOCX file bytes.
+
+    Returns:
+        Extracted UTF-8 text.
+    """
     # python-docx erwartet einen Dateipfad oder eine Datei-ähnliche BinaryIO
     with io.BytesIO(data) as buf:
         doc = Document(buf)
@@ -75,9 +96,13 @@ def _extract_text_docx(data: bytes) -> str:
 
 
 def _extract_text_zip_plain(data: bytes) -> str | None:
-    """
-    Versucht, aus ZIP-Containern (z. B. OOXML) Klartext-XML zu extrahieren,
-    falls python-docx nicht verfügbar ist.
+    """Try to read plain text XML from a ZIP container.
+
+    Args:
+        data: Bytes of the ZIP file, typically OOXML.
+
+    Returns:
+        Extracted text or ``None`` if extraction failed.
     """
     try:
         with zipfile.ZipFile(io.BytesIO(data)) as zf:
@@ -111,21 +136,15 @@ def extract_text_from_file(
     *,
     preferred_language: Literal["auto", "de", "en"] = "auto",
 ) -> str:
-    """
-    Parameters
-    ----------
-    file_content : bytes
-        Die rohen Byte-Daten der Datei.
-    filename : str
-        Ursprünglicher Dateiname (nur für Endungs-Erkennung).
-    preferred_language : {'auto', 'de', 'en'}, default='auto'
-        Wird nicht aktiv gefiltert, kann aber in Zukunft für OCR/Language
-        Detection genutzt werden.
+    """Extract cleaned text from an uploaded file.
 
-    Returns
-    -------
-    str
-        Gecleanter UTF-8-Text oder leerer String bei Fehler.
+    Args:
+        file_content: Raw bytes of the uploaded file.
+        filename: Original file name used to detect the extension.
+        preferred_language: Optional hint for OCR or language detection.
+
+    Returns:
+        The cleaned UTF-8 text or an empty string if extraction fails.
     """
     try:
         ext = _ext(filename)

@@ -6,32 +6,54 @@ __all__ = ["TriggerEngine", "build_default_graph"]
 
 
 class TriggerEngine:
-    """DAG zur Verwaltung von Feldabhängigkeiten und zugehörigen Verarbeitungsfunktionen."""
+    """Directed acyclic graph managing field dependencies and processors."""
 
     def __init__(self) -> None:
+        """Initialize an empty dependency graph."""
         self.graph: nx.DiGraph = nx.DiGraph()
         self._processors: dict[str, Callable[[dict], None]] = {}
 
     def register_node(self, key: str) -> None:
+        """Ensure ``key`` exists as a node in the graph."""
         if key not in self.graph:
             self.graph.add_node(key)
 
     def register_dependency(self, source: str, target: str) -> None:
-        """Deklariert, dass *target* von *source* abhängt (Kante source→target)."""
+        """Declare that ``target`` depends on ``source``.
+
+        Args:
+            source: Source node key.
+            target: Target node key.
+        """
         self.register_node(source)
         self.register_node(target)
         self.graph.add_edge(source, target)
 
     def register_dependencies(self, pairs: Iterable[tuple[str, str]]) -> None:
+        """Register multiple dependency pairs.
+
+        Args:
+            pairs: Iterable of ``(source, target)`` tuples.
+        """
         for src, tgt in pairs:
             self.register_dependency(src, tgt)
 
     def register_processor(self, key: str, func: Callable[[dict], None]) -> None:
-        """Registriert eine Verarbeitungsfunktion, die ausgeführt wird, wenn *key* neu berechnet werden muss."""
+        """Attach a processor function for ``key``.
+
+        Args:
+            key: Node key the processor updates.
+            func: Function that mutates the state when ``key`` changes.
+        """
         self._processors[key] = func
 
     def notify_change(self, updated_key: str, state: dict) -> None:
-        """Benachrichtigt die Engine, dass sich *updated_key* geändert hat, und führt alle abhängigen Verarbeiter aus."""
+        """Run processors for nodes affected by ``updated_key``.
+
+        Args:
+            updated_key: The key that has changed.
+            state: Current state dictionary passed to processors.
+        """
         if updated_key not in self.graph:
             return
         affected: Set[str] = nx.descendants(self.graph, updated_key)
@@ -62,7 +84,14 @@ _DEPENDENCY_PAIRS: list[tuple[str, str]] = [
 
 
 def build_default_graph(engine: TriggerEngine) -> None:
-    """Befüllt die TriggerEngine mit dem Abhängigkeitsgraphen und registriert die Verarbeitungsfunktionen."""
+    """Populate ``engine`` with default dependencies and processors.
+
+    Args:
+        engine: The :class:`TriggerEngine` instance to configure.
+
+    Returns:
+        None.
+    """
     engine.register_dependencies(_DEPENDENCY_PAIRS)
     # Alle Prozessorfunktionen zentral registrieren
     from logic.processors import register_all_processors
