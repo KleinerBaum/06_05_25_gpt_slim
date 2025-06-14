@@ -77,7 +77,9 @@ class VectorStore:
         Returns:
             List of stored texts ranked by similarity.
         """
-        if not query or self.index is None or self.index.ntotal == 0:
+        if self.index is None or self.index.ntotal == 0:
+            return []
+        if not query:
             return []
         q_emb = self._embed([query])
         dists, idxs = self.index.search(q_emb, k)

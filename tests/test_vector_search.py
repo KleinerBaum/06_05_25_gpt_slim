@@ -41,3 +41,12 @@ def test_search_empty_index_returns_empty(tmp_path: Path) -> None:
         results = store.search("anything")
     assert results == []
     embed_mock.assert_not_called()
+
+
+def test_search_none_index_returns_empty(tmp_path: Path) -> None:
+    store = VectorStore(path=tmp_path)
+    store.index = None
+    with patch.object(store, "_embed") as embed_mock:
+        results = store.search("anything")
+    assert results == []
+    embed_mock.assert_not_called()
