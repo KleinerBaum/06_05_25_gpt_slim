@@ -218,6 +218,7 @@ def display_step_summary(step: int) -> None:
 
 
 def start_discovery_page():
+    """Render the first step of the wizard where users provide job details."""
     # Schritt 1: Einstieg (Jobtitel/Quelle eingeben)
     lang = st.session_state.get("lang", "English")
     if lang == "Deutsch":
@@ -241,20 +242,8 @@ def start_discovery_page():
         btn_job = "➕ Enter Job Title"
         btn_upload = "📂 Upload PDF / DOCX"
     st.markdown(intro_text)
-    st.header("Vacalyzer – Start Discovery")
     prog = progress_percentage(st.session_state)
     st.progress(prog / 100.0, text=f"{prog}% complete")
-    st.write(
-        (
-            "Geben Sie einen Jobtitel und optional eine URL oder Datei an. "
-            "Unsere KI analysiert alle Quellen und vervollständigt fehlende Informationen im Handumdrehen."
-        )
-        if lang == "Deutsch"
-        else (
-            "Provide a job title and optionally a link or file. "
-            "Our AI reviews every source and instantly fills in any missing details."
-        )
-    )
     col1, col2 = st.columns(2)
     with col1:
         job_title = st.text_input(
