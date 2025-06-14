@@ -167,13 +167,23 @@ def auto_fill_job_spec(
                 from logic.file_tools import extract_text_from_file
                 import base64
 
-                file_content_str = func_args.get("file_content", "")
-                filename = func_args.get("filename", "")
-                try:
-                    file_bytes_input = base64.b64decode(file_content_str)
-                except Exception:
-                    file_bytes_input = file_content_str.encode("utf-8", "ignore")
-                func_result = extract_text_from_file(file_bytes_input, filename) or ""
+                # Prefer bytes provided to ``auto_fill_job_spec``
+                file_bytes_input = file_bytes or b""
+                filename_input = file_name or ""
+
+                if not file_bytes_input:
+                    file_content_str = func_args.get("file_content", "")
+                    try:
+                        file_bytes_input = base64.b64decode(file_content_str)
+                    except Exception:
+                        file_bytes_input = file_content_str.encode("utf-8", "ignore")
+
+                if not filename_input:
+                    filename_input = func_args.get("filename", "")
+
+                func_result = (
+                    extract_text_from_file(file_bytes_input, filename_input) or ""
+                )
                 if not isinstance(func_result, str):
                     func_result = str(func_result)
         except Exception as e:
