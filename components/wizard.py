@@ -235,6 +235,16 @@ def start_discovery_page():
         )
         if input_url:
             st.session_state["input_url"] = input_url
+        company_url = st.text_input(
+            (
+                "🌐 Unternehmenswebseite (optional)"
+                if lang == "Deutsch"
+                else "🌐 Company Website (optional)"
+            ),
+            value=st.session_state.get("company_website", ""),
+        )
+        if company_url:
+            st.session_state["company_website"] = company_url
     with col2:
         uploaded_file = st.file_uploader(btn_upload, type=["pdf", "docx", "txt"])
         if uploaded_file is not None:
@@ -270,6 +280,23 @@ def start_discovery_page():
                 else "⚠️ Please provide a valid URL or upload a file."
             )
             return
+        if st.session_state.get("company_website"):
+            info = scrape_company_site(st.session_state["company_website"])
+            st.session_state["company_site_title"] = info.get("title", "")
+            st.session_state["company_site_description"] = info.get("description", "")
+            if info.get("title") or info.get("description"):
+                with st.expander(
+                    (
+                        "Gefundene Unternehmensinfos"
+                        if lang == "Deutsch"
+                        else "Fetched Company Info"
+                    ),
+                    expanded=False,
+                ):
+                    if info.get("title"):
+                        st.write(f"**Title:** {info['title']}")
+                    if info.get("description"):
+                        st.write(f"**Description:** {info['description']}")
         if not config.OPENAI_API_KEY:
             st.error(
                 "❌ KI-Funktionen nicht verfügbar. Bitte OPENAI_API_KEY konfigurieren."

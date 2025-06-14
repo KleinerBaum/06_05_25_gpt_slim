@@ -46,6 +46,10 @@ You can also set the variables via a `.env` file during local development.
 └── tests/
 ```
 
+### Features
+
+- Start discovery page can scrape basic company information when a website URL is provided.
+
 ## ESCO API Prompt Templates
 
 A collection of ready-made prompts for querying the ESCO API is available in [docs/esco_api_prompts.md](docs/esco_api_prompts.md).
