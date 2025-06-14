@@ -19,6 +19,8 @@ OpenAI's GPT models.
 - **Helper utilities** such as `build_boolean_query`,
   `generate_interview_questions` and `summarize_job_ad`.
 - **File and web search helpers** plus image generation for maps and timelines.
+- **Job URL extraction** now uses readability-lxml to fetch the full text of
+  job postings.
 - **Discovery page** can scrape basic company information from a provided URL.
 
 ## Prerequisites
@@ -73,6 +75,8 @@ DATABASE_URL = "postgresql://user:pass@host/db"
 Replace `YOUR_OPENAI_KEY` with your actual key or set the
 `OPENAI_API_KEY` environment variable. Streamlit will read the
 environment variable when the key is not present in `secrets.toml`.
+Without a valid API key the wizard falls back to simple label parsing
+instead of AI-powered extraction.
 
 ## Running the App
 
