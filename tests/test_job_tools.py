@@ -3,6 +3,9 @@ from logic.job_tools import (
     parse_job_spec,
     progress_percentage,
     highlight_keywords,
+    build_boolean_query,
+    generate_interview_questions,
+    summarize_job_ad,
 )
 from utils.keys import STEP_KEYS
 
@@ -34,3 +37,23 @@ def test_highlight_keywords_case_insensitive() -> None:
     text = "Python developer needed"
     result = highlight_keywords(text, ["python"])
     assert result.startswith("**Python**")
+
+
+def test_build_boolean_query() -> None:
+    query = build_boolean_query("Data Scientist", ["Python", "SQL"])
+    assert '"Data Scientist"' in query
+    assert "Python" in query and "SQL" in query
+
+
+def test_generate_interview_questions() -> None:
+    tasks = "Develop models\nAnalyze data"
+    questions = generate_interview_questions(tasks, num_questions=2)
+    assert len(questions) == 2
+    assert all("?" in q for q in questions)
+
+
+def test_summarize_job_ad() -> None:
+    text = "word " * 100
+    summary = summarize_job_ad(text, max_words=5)
+    assert summary.endswith("...")
+    assert len(summary.split()) <= 6

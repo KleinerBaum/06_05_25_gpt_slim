@@ -49,6 +49,10 @@ You can also set the variables via a `.env` file during local development.
 ### Features
 
 - Start discovery page can scrape basic company information when a website URL is provided.
+- Utility helpers now include:
+  - `build_boolean_query` to create candidate search strings.
+  - `generate_interview_questions` for quick interview prep.
+  - `summarize_job_ad` to get short ad summaries.
 
 ## ESCO API Prompt Templates
 
