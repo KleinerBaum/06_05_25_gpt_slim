@@ -2,6 +2,7 @@ from __future__ import annotations
 from collections.abc import MutableMapping
 from datetime import date
 from typing import Any, cast
+import re
 
 import streamlit as st
 import requests  # type: ignore
@@ -146,17 +147,13 @@ def match_and_store_keys(
     for key, label in labels.items():
         if state.get(key):
             continue
-        if label in raw_text:
-            try:
-                value = (
-                    raw_text.split(label, 1)[1]
-                    .split("\n", 1)[0]
-                    .lstrip(": ")
-                    .rstrip(":;,.")
-                    .strip()
-                )
-            except IndexError:
-                continue
+        clean_label = label.rstrip(":")
+        pattern = re.compile(
+            rf"{re.escape(clean_label)}\s*[:\-]?\s*(.+)", re.IGNORECASE
+        )
+        match = pattern.search(raw_text)
+        if match:
+            value = match.group(1).split("\n", 1)[0].strip(" :;,.\t")
             if value:
                 state[key] = value
 
