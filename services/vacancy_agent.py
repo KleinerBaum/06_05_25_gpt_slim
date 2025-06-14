@@ -211,9 +211,13 @@ def auto_fill_job_spec(
 
     # 'content' sollte nun den JSON-String entsprechend JobSpec enthalten
     content_str = content.strip()
-    if content_str.startswith("```"):
-        # Etwaige Markdown-Formatierung entfernen
-        content_str = content_str.strip("``` \n")
+    if content_str.startswith("```") and content_str.endswith("```"):
+        # remove surrounding code fences and optional language hints
+        content_str = content_str[3:-3].strip()
+        if content_str.lower().startswith("json"):
+            content_str = content_str[4:].strip()
+    elif content_str.startswith("```"):
+        content_str = content_str.strip("` \n")
     if content_str == "":
         return {}
     # JSON-String in Pydantic-Modell JobSpec validieren und parsen
