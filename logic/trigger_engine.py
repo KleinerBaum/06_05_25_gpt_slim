@@ -64,24 +64,7 @@ _DEPENDENCY_PAIRS: list[tuple[str, str]] = [
 def build_default_graph(engine: TriggerEngine) -> None:
     """Befüllt die TriggerEngine mit dem Abhängigkeitsgraphen und registriert die Verarbeitungsfunktionen."""
     engine.register_dependencies(_DEPENDENCY_PAIRS)
-    # Importiere Verarbeitungsfunktionen
-    from logic.processors import (
-        update_salary_range,
-        update_publication_channels,
-        update_task_list,
-        update_must_have_skills,
-        update_nice_to_have_skills,
-        update_bonus_scheme,
-        update_commission_structure,
-    )
+    # Alle Prozessorfunktionen zentral registrieren
+    from logic.processors import register_all_processors
 
-    # Funktionen mit ihren Ziel-Feldern verknüpfen
-    engine.register_processor("task_list", update_task_list)
-    engine.register_processor("must_have_skills", update_must_have_skills)
-    engine.register_processor("nice_to_have_skills", update_nice_to_have_skills)
-    engine.register_processor("salary_range", update_salary_range)
-    engine.register_processor(
-        "desired_publication_channels", update_publication_channels
-    )
-    engine.register_processor("bonus_scheme", update_bonus_scheme)
-    engine.register_processor("commission_structure", update_commission_structure)
+    register_all_processors(engine)
