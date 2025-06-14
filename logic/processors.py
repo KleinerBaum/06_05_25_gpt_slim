@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 from typing import Any, cast
+import json
 import logging
 
 from logic.trigger_engine import TriggerEngine
@@ -118,6 +119,67 @@ def update_nice_to_have_skills(state: dict[str, Any]) -> None:
         return
     if extra_skills:
         state["nice_to_have_skills"] = extra_skills
+
+
+def suggest_additional_skills(
+    job_title: str,
+    tasks: str,
+    job_level: str,
+    job_ad: str,
+    num_skills: int = 15,
+) -> dict[str, list[str]]:
+    """Return extra technical and soft skills via OpenAI.
+
+    Args:
+        job_title: Current job title.
+        tasks: Key responsibilities text.
+        job_level: Seniority level of the role.
+        job_ad: Full job advertisement text.
+        num_skills: Number of skills per category.
+
+    Returns:
+        Dictionary with ``technical`` and ``soft`` skill lists.
+    """
+
+    prompt = (
+        "Based on the job title '{job_title}', tasks '{tasks}' "
+        "and seniority level '{job_level}', list {n} technical skills and {n} "
+        "soft skills that are relevant but not explicitly mentioned in the "
+        "job ad text below. Return JSON with keys 'technical' and 'soft'.\n"
+        f"Job ad: {job_ad}"
+    ).format(job_title=job_title, tasks=tasks, job_level=job_level, n=num_skills)
+
+    try:
+        response = call_with_retry(
+            openai.chat.completions.create,  # type: ignore[attr-defined]
+            model=_SUGGESTION_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=300,
+        )
+        content = (response.choices[0].message.content or "").strip()
+        if content.startswith("```"):
+            content = content.strip("` \n")
+        data = json.loads(content)
+    except Exception as e:  # pragma: no cover - network/JSON errors
+        logging.error(f"Skill suggestion failed: {e}")
+        return {"technical": [], "soft": []}
+
+    technical: list[str] | str = data.get("technical", [])
+    soft: list[str] | str = data.get("soft", [])
+    if isinstance(technical, str):
+        technical_list = [s.strip() for s in technical.split(",") if s.strip()]
+    else:
+        technical_list = [str(s).strip() for s in technical if str(s).strip()]
+    if isinstance(soft, str):
+        soft_list = [s.strip() for s in soft.split(",") if s.strip()]
+    else:
+        soft_list = [str(s).strip() for s in soft if str(s).strip()]
+
+    return {
+        "technical": technical_list[:num_skills],
+        "soft": soft_list[:num_skills],
+    }
 
 
 def update_salary_range(state: dict[str, Any]) -> None:

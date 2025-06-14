@@ -682,6 +682,74 @@ def render_step5_static():
     )
     display_step_summary(5)
 
+    if st.button("Skillvorschläge" if lang == "Deutsch" else "Suggest skills"):
+        from logic.processors import suggest_additional_skills
+
+        st.session_state["skill_suggestions"] = suggest_additional_skills(
+            st.session_state.get("job_title", ""),
+            st.session_state.get("task_list", ""),
+            st.session_state.get("job_level", ""),
+            st.session_state.get("parsed_data_raw", ""),
+        )
+
+    suggestions = st.session_state.get("skill_suggestions")
+    if suggestions:
+        st.subheader(
+            "Vorgeschlagene Skills" if lang == "Deutsch" else "Suggested Skills"
+        )
+        tech_col, soft_col = st.columns(2)
+
+        with tech_col:
+            st.markdown("**Technical Skills**")
+            st.multiselect(
+                "Must-Have",
+                suggestions.get("technical", []),
+                key="tech_must_select",
+            )
+            st.multiselect(
+                "Nice-to-Have",
+                suggestions.get("technical", []),
+                key="tech_nice_select",
+            )
+
+        with soft_col:
+            st.markdown("**Soft Skills**")
+            st.multiselect(
+                "Must-Have",
+                suggestions.get("soft", []),
+                key="soft_must_select",
+            )
+            st.multiselect(
+                "Nice-to-Have",
+                suggestions.get("soft", []),
+                key="soft_nice_select",
+            )
+
+        def _apply_suggestions() -> None:
+            mh = st.session_state.setdefault("must_have_skills_list", [])
+            nh = st.session_state.setdefault("nice_to_have_skills_list", [])
+            for s in st.session_state.get("tech_must_select", []):
+                if s not in mh:
+                    mh.append(s)
+            for s in st.session_state.get("soft_must_select", []):
+                if s not in mh:
+                    mh.append(s)
+            for s in st.session_state.get("tech_nice_select", []):
+                if s not in nh:
+                    nh.append(s)
+            for s in st.session_state.get("soft_nice_select", []):
+                if s not in nh:
+                    nh.append(s)
+            st.session_state["tech_must_select"] = []
+            st.session_state["soft_must_select"] = []
+            st.session_state["tech_nice_select"] = []
+            st.session_state["soft_nice_select"] = []
+
+        st.button(
+            "Auswahl übernehmen" if lang == "Deutsch" else "Add selected",
+            on_click=_apply_suggestions,
+        )
+
     st.write(
         "Ziehe deine eingegebenen Fähigkeiten einfach zwischen die Spalten"
         if lang == "Deutsch"

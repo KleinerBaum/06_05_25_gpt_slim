@@ -63,6 +63,7 @@ You can also place these values in a `.env` file and load them in Python via
   - `build_boolean_query` to create candidate search strings.
   - `generate_interview_questions` for quick interview prep.
   - `summarize_job_ad` to get short ad summaries.
+  - Step 5 now offers a "Suggest skills" button generating technical and soft skill keywords.
 
 ## ESCO API Prompt Templates
 
