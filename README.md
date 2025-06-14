@@ -18,6 +18,7 @@ OpenAI's GPT models.
 - **FAISS based vector search** for storing and querying extracted text.
 - **Helper utilities** such as `build_boolean_query`,
   `generate_interview_questions` and `summarize_job_ad`.
+- **File and web search helpers** plus image generation for maps and timelines.
 - **Discovery page** can scrape basic company information from a provided URL.
 
 ## Prerequisites

@@ -5,8 +5,11 @@ import os
 
 os.environ.setdefault("OPENAI_API_KEY", "test-key")
 
+import streamlit.runtime.secrets as st_secrets
 from models.job_models import JobSpec
-from services.vacancy_agent import fix_json_output
+
+with patch.object(st_secrets.Secrets, "_parse", return_value={}):
+    from services.vacancy_agent import fix_json_output, FUNCTION_DEFS
 
 
 def test_fix_json_output_returns_same_when_json_valid() -> None:
@@ -62,3 +65,15 @@ def test_auto_fill_uses_file_bytes() -> None:
     extract_mock.assert_called_once_with(b"abc", "sample.txt")
     assert result["job_title"] == "Dev"
     assert create_mock.call_count == 2
+
+
+def test_function_defs_contains_expected_names() -> None:
+    names = {f["name"] for f in FUNCTION_DEFS}
+    assert {
+        "extract_text_from_file",
+        "scrape_company_site",
+        "retrieve_esco_skills",
+        "update_salary_range",
+        "interview_prep_generator",
+        "vector_search_candidates",
+    }.issubset(names)
