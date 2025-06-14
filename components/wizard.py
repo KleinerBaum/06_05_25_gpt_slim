@@ -383,7 +383,7 @@ def start_discovery_page():
                     _ensure_engine().notify_change(k, dict(st.session_state))
                 # Ergänze fehlende Felder über einfache Label-Erkennung
                 match_and_store_keys(raw_text)
-                skills = st.session_state.get("must_have_skills", "").split("\n")
+                skills = (st.session_state.get("must_have_skills") or "").split("\n")
                 highlighted = highlight_keywords(raw_text, skills)
                 with st.expander(
                     (
@@ -699,9 +699,9 @@ def render_step5_static():
             st.session_state.get("job_title", ""),
             st.session_state.get("task_list", ""),
             st.session_state.get("job_level", ""),
-            st.session_state.get("must_have_skills", "")
+            (st.session_state.get("must_have_skills") or "")
             + "\n"
-            + st.session_state.get("nice_to_have_skills", ""),
+            + (st.session_state.get("nice_to_have_skills") or ""),
         )
         st.session_state["suggested_technical"] = suggestions["technical"]
         st.session_state["suggested_soft"] = suggestions["soft"]
@@ -1207,7 +1207,7 @@ def render_step8():
 
         skills = [
             s.strip()
-            for s in st.session_state.get("must_have_skills", "").split("\n")
+            for s in (st.session_state.get("must_have_skills") or "").split("\n")
             if s.strip()
         ]
         query = build_boolean_query(st.session_state.get("job_title", ""), skills)
