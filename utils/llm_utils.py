@@ -51,7 +51,7 @@ def get_role_skills(job_title: str, num_skills: int = 15) -> List[str]:
     ]
     try:
         completion = call_with_retry(
-            openai.ChatCompletion.create,  # type: ignore[attr-defined]
+            openai.chat.completions.create,  # type: ignore[attr-defined]
             model=config.OPENAI_MODEL,
             messages=messages,
             temperature=0.5,

@@ -125,7 +125,7 @@ def auto_fill_job_spec(
         {"role": "user", "content": user_message},
     ]
     try:
-        response = openai.ChatCompletion.create(  # type: ignore[attr-defined]
+        response = openai.chat.completions.create(  # type: ignore
             model=config.OPENAI_MODEL,
             messages=messages,
             functions=FUNCTIONS,
@@ -177,7 +177,7 @@ def auto_fill_job_spec(
         # Ergebnis der Funktion als Assistant-Antwort hinzufügen und zweiten API-Call durchführen
         messages.append({"role": "function", "name": func_name, "content": func_result})
         try:
-            second_response = openai.ChatCompletion.create(  # type: ignore[attr-defined]
+            second_response = openai.chat.completions.create(  # type: ignore
                 model=config.OPENAI_MODEL,
                 messages=messages,
                 functions=FUNCTIONS,
@@ -212,7 +212,7 @@ def auto_fill_job_spec(
         # Versuchen, das LLM sein Format korrigieren zu lassen
         repair_system_msg = "Your previous output was not valid JSON. Only output a valid JSON matching JobSpec now."
         try:
-            repair_resp = openai.ChatCompletion.create(  # type: ignore[attr-defined]
+            repair_resp = openai.chat.completions.create(  # type: ignore
                 model=config.OPENAI_MODEL,
                 messages=[
                     {"role": "system", "content": SYSTEM_MESSAGE},
@@ -223,7 +223,7 @@ def auto_fill_job_spec(
                 temperature=0,
                 max_tokens=1200,
             )
-            content_str = repair_resp.choices[0].message.content.strip()
+            content_str = (repair_resp.choices[0].message.content or "").strip()
             job_spec = JobSpec.model_validate_json(content_str)
         except Exception as e:
             logger.error(f"Reparaturversuch fehlgeschlagen: {e}")
@@ -244,13 +244,13 @@ def fix_json_output(raw_json: str) -> dict:
             "\n" + raw_json
         )
         try:
-            resp = openai.ChatCompletion.create(  # type: ignore[attr-defined]
+            resp = openai.chat.completions.create(  # type: ignore
                 model=config.OPENAI_MODEL,
                 messages=[{"role": "user", "content": repair_prompt}],
                 temperature=0,
                 max_tokens=1200,
             )
-            content = resp.choices[0].message.content.strip()
+            content = (resp.choices[0].message.content or "").strip()
             return JobSpec.model_validate_json(content).model_dump()
         except Exception as err:
             logger.error(f"JSON repair failed: {err}")
