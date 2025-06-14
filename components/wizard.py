@@ -616,22 +616,31 @@ def render_step5_static():
         else "Drag your skills between the columns below."
     )
 
-    new_skill = st.text_input(
+    st.text_input(
         "Neuen Skill hinzufügen" if lang == "Deutsch" else "Add new skill",
         key="skill_input",
     )
-    add_to_must = st.checkbox(
+    st.checkbox(
         "Zu Muss" if lang == "Deutsch" else "To Must-Have",
         value=True,
         key="add_to_must",
     )
-    if (
-        st.button("Skill speichern" if lang == "Deutsch" else "Save skill")
-        and new_skill
-    ):
-        target = "must_have_skills_list" if add_to_must else "nice_to_have_skills_list"
-        st.session_state.setdefault(target, []).append(new_skill)
+
+    def _add_skill() -> None:
+        if not st.session_state.get("skill_input"):
+            return
+        target = (
+            "must_have_skills_list"
+            if st.session_state.get("add_to_must", True)
+            else "nice_to_have_skills_list"
+        )
+        st.session_state.setdefault(target, []).append(st.session_state["skill_input"])
         st.session_state["skill_input"] = ""
+
+    st.button(
+        "Skill speichern" if lang == "Deutsch" else "Save skill",
+        on_click=_add_skill,
+    )
 
     must_list = st.session_state.get("must_have_skills_list", [])
     nice_list = st.session_state.get("nice_to_have_skills_list", [])
