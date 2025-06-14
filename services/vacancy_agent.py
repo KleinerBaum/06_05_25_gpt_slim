@@ -22,37 +22,132 @@ SKILLS_ASSISTANT_PROMPT = (
 
 
 # Funktionen (Tools) für OpenAI Function Calling definieren
-FUNCTIONS = [
+FUNCTION_DEFS: list[dict] = [
     {
-        "name": "scrape_company_site",
-        "description": "Fetch basic company info (title and meta description) from a company website.",
+        "name": "extract_text_from_file",
+        "description": "Extracts raw or structured text from an uploaded document (PDF, DOCX, TXT).",
         "parameters": {
             "type": "object",
             "properties": {
-                "url": {
+                "file_id": {
                     "type": "string",
-                    "description": "The URL of the company homepage.",
-                }
+                    "description": "Upload ID returned by file_tools",
+                },
+                "file_type": {"type": "string", "enum": ["pdf", "docx", "txt"]},
+                "page_range": {
+                    "type": "string",
+                    "description": "Optional page selection, e.g. '1-3,5'",
+                },
+                "return_format": {
+                    "type": "string",
+                    "enum": ["plain", "markdown", "html"],
+                    "default": "plain",
+                },
             },
-            "required": ["url"],
+            "required": ["file_id", "file_type"],
         },
     },
     {
-        "name": "extract_text_from_file",
-        "description": "Extract readable text from an uploaded job-ad file (PDF, DOCX, or TXT).",
+        "name": "scrape_company_site",
+        "description": "Crawls a given company URL and returns meta-information such as mission, products, locations, head-count.",
         "parameters": {
             "type": "object",
             "properties": {
-                "file_content": {
-                    "type": "string",
-                    "description": "Base64-encoded file content.",
+                "company_url": {"type": "string", "format": "uri"},
+                "max_depth": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 3,
+                    "default": 1,
                 },
-                "filename": {
+                "include_html": {"type": "boolean", "default": False},
+            },
+            "required": ["company_url"],
+        },
+    },
+    {
+        "name": "retrieve_esco_skills",
+        "description": "Returns ESCO-standardised skills for a given job title or free-text description.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "job_title": {"type": "string"},
+                "description": {
                     "type": "string",
-                    "description": "Original filename with extension.",
+                    "description": "Optional extra context",
+                },
+                "max_results": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 50,
+                    "default": 15,
+                },
+                "language": {"type": "string", "default": "en"},
+            },
+            "required": ["job_title"],
+        },
+    },
+    {
+        "name": "update_salary_range",
+        "description": "Estimates a competitive salary range based on role, location and seniority.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "job_title": {"type": "string"},
+                "location": {"type": "string"},
+                "seniority": {
+                    "type": "string",
+                    "enum": ["junior", "mid", "senior", "lead"],
+                },
+                "currency": {"type": "string", "default": "EUR"},
+                "spread_pct": {
+                    "type": "number",
+                    "description": "Desired ±% spread around midpoint",
+                    "default": 10,
                 },
             },
-            "required": ["file_content", "filename"],
+            "required": ["job_title", "location"],
+        },
+    },
+    {
+        "name": "interview_prep_generator",
+        "description": "Creates tailored interview questions & scorecard rubrics from a JobSpec object.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "job_spec": {
+                    "type": "string",
+                    "description": "Full job specification JSON/text",
+                },
+                "num_questions": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 50,
+                    "default": 10,
+                },
+                "language": {"type": "string", "default": "de"},
+            },
+            "required": ["job_spec"],
+        },
+    },
+    {
+        "name": "vector_search_candidates",
+        "description": "Searches the vector store for best-matching candidate profiles.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Free-text query (role & skills)",
+                },
+                "top_k": {"type": "integer", "minimum": 1, "maximum": 50, "default": 5},
+                "vector_store_id": {
+                    "type": "string",
+                    "const": "vs_67e40071e7608191a62ab06cacdcdd10",
+                    "description": "ID of the Vacalyser vector store",
+                },
+            },
+            "required": ["query"],
         },
     },
 ]
@@ -132,7 +227,7 @@ def auto_fill_job_spec(
         response = openai.chat.completions.create(  # type: ignore
             model=config.OPENAI_MODEL,
             messages=messages,
-            functions=FUNCTIONS,
+            functions=FUNCTION_DEFS,
             function_call="auto",
             temperature=0.2,
             max_tokens=1500,
@@ -186,6 +281,23 @@ def auto_fill_job_spec(
                 )
                 if not isinstance(func_result, str):
                     func_result = str(func_result)
+            elif func_name == "retrieve_esco_skills":
+                from services.new_tools import retrieve_esco_skills
+
+                func_res = retrieve_esco_skills(**func_args)
+                func_result = json.dumps(func_res)
+            elif func_name == "update_salary_range":
+                from services.new_tools import update_salary_range
+
+                func_result = update_salary_range(**func_args)
+            elif func_name == "interview_prep_generator":
+                from services.new_tools import interview_prep_generator
+
+                func_result = json.dumps(interview_prep_generator(**func_args))
+            elif func_name == "vector_search_candidates":
+                from services.new_tools import vector_search_candidates
+
+                func_result = json.dumps(vector_search_candidates(**func_args))
         except Exception as e:
             logger.error(f"Fehler bei Tool-Ausführung {func_name}: {e}")
         # Ergebnis der Funktion als Assistant-Antwort hinzufügen und zweiten API-Call durchführen
@@ -194,7 +306,7 @@ def auto_fill_job_spec(
             second_response = openai.chat.completions.create(  # type: ignore
                 model=config.OPENAI_MODEL,
                 messages=messages,
-                functions=FUNCTIONS,
+                functions=FUNCTION_DEFS,
                 function_call="auto",
                 temperature=0.2,
                 max_tokens=1500,

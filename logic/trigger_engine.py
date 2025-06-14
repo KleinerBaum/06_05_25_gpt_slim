@@ -2,7 +2,9 @@ from __future__ import annotations
 from typing import Callable, Iterable, Set
 import networkx as nx
 
-__all__ = ["TriggerEngine", "build_default_graph"]
+__all__ = ["TriggerEngine", "build_default_graph", "run_file_search"]
+
+from .search_helpers import run_file_search
 
 
 class TriggerEngine:

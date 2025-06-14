@@ -1,0 +1,1 @@
+"""Stub tools for testing."""
