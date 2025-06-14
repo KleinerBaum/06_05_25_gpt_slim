@@ -37,6 +37,7 @@ Before running the app locally:
 
 ```bash
 pip install -r requirements.txt
+pip install -e .
 ```
 
 Ensure directories such as `uploads/` and `logs/` exist. Then start the app with `streamlit run app.py`.
