@@ -229,7 +229,7 @@ def start_discovery_page():
             "Unsere KI veredelt jedes Detail und liefert Ihnen blitzschnell ein perfektes Anforderungsprofil."
         )
         btn_job = "➕ Jobtitel eingeben"
-        btn_upload = "📂 PDF / DOCX hochladen"
+        btn_upload = "📂 PDF / DOCX / TXT hochladen"
     else:
         st.title("🚀 Attract Top Talent with RoleCraft")
         st.subheader("From concept to irresistible job ad")
@@ -239,7 +239,7 @@ def start_discovery_page():
             "Our AI instantly enriches every detail so you can present an outstanding role profile."
         )
         btn_job = "➕ Enter Job Title"
-        btn_upload = "📂 Upload PDF / DOCX"
+        btn_upload = "📂 Upload PDF / DOCX / TXT"
     st.markdown(intro_text)
     st.header("Vacalyzer – Start Discovery")
     prog = progress_percentage(st.session_state)

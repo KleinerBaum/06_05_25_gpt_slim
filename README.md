@@ -1,7 +1,7 @@
 # Vacalyser – Recruitment Need Analysis Wizard
 
 Vacalyser is an AI powered Streamlit app that turns unstructured job adverts
-(PDF, DOCX or URLs) into a structured job specification. It guides hiring
+(PDF, DOCX, TXT or URLs) into a structured job specification. It guides hiring
 managers step by step from a rough idea to a polished job posting using
 OpenAI's GPT models.
 
