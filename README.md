@@ -9,6 +9,8 @@ OpenAI's GPT models.
 
 - **AI-driven extraction** of existing job descriptions or URLs.
 - **Interactive eight-step wizard** available in English and German.
+- **Skill suggestions** button in step 5 recommends additional technical and
+  soft skills not found in the job ad.
 - **Trigger Engine** built on a dependency graph that auto-updates related
   fields as you change inputs.
 - **Prompt library and `@tool` functions** for text extraction and web

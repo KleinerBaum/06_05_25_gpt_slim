@@ -20,6 +20,7 @@ from logic.job_tools import (
     progress_percentage,
     highlight_keywords,
 )
+from utils.llm_utils import suggest_additional_skills
 from utils import config
 
 # Session State initialisieren (nur beim ersten Aufruf)
@@ -681,6 +682,49 @@ def render_step5_static():
         else "Step 5: Skills & Competencies"
     )
     display_step_summary(5)
+
+    if st.button(
+        "Top-Skills vorschlagen" if lang == "Deutsch" else "Suggest Top Skills"
+    ):
+        suggestions = suggest_additional_skills(
+            st.session_state.get("job_title", ""),
+            st.session_state.get("task_list", ""),
+            st.session_state.get("job_level", ""),
+            st.session_state.get("must_have_skills", "")
+            + "\n"
+            + st.session_state.get("nice_to_have_skills", ""),
+        )
+        st.session_state["suggested_technical"] = suggestions["technical"]
+        st.session_state["suggested_soft"] = suggestions["soft"]
+
+    if st.session_state.get("suggested_technical") or st.session_state.get(
+        "suggested_soft"
+    ):
+        col_a, col_b = st.columns(2)
+        with col_a:
+            selected_tech = st.multiselect(
+                "Technical Skills",
+                options=st.session_state.get("suggested_technical", []),
+                key="select_tech",
+            )
+            if st.button("Zu Muss", key="add_tech"):
+                for skill in selected_tech:
+                    st.session_state.setdefault("must_have_skills_list", []).append(
+                        skill
+                    )
+                st.session_state["select_tech"] = []
+        with col_b:
+            selected_soft = st.multiselect(
+                "Soft Skills",
+                options=st.session_state.get("suggested_soft", []),
+                key="select_soft",
+            )
+            if st.button("Zu Nice", key="add_soft"):
+                for skill in selected_soft:
+                    st.session_state.setdefault("nice_to_have_skills_list", []).append(
+                        skill
+                    )
+                st.session_state["select_soft"] = []
 
     st.write(
         "Ziehe deine eingegebenen Fähigkeiten einfach zwischen die Spalten"

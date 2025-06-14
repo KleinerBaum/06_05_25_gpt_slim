@@ -87,6 +87,79 @@ def get_role_skills(job_title: str, num_skills: int = 15) -> List[str]:
     return skills_list
 
 
+def suggest_additional_skills(
+    job_title: str,
+    tasks: str = "",
+    level: str = "",
+    existing: str = "",
+    num_skills: int = 30,
+) -> dict[str, list[str]]:
+    """Generate technical and soft skills not mentioned in the job ad.
+
+    Args:
+        job_title: Title of the role.
+        tasks: Key tasks or responsibilities.
+        level: Seniority level of the role.
+        existing: Skills already extracted from the job ad.
+        num_skills: Total number of suggestions to return (split in half).
+
+    Returns:
+        Dictionary with ``technical`` and ``soft`` skill lists.
+    """
+
+    job_title = job_title.strip()
+    if not job_title:
+        return {"technical": [], "soft": []}
+
+    tech_count = num_skills // 2
+    soft_count = num_skills - tech_count
+    prompt = (
+        f"You are an expert career advisor. Suggest {tech_count} technical skills"
+        f" and {soft_count} soft skills for a {level} {job_title} role. "
+        "Do not repeat skills from the job ad. "
+    )
+    if tasks:
+        prompt += f" Key tasks: {tasks}."
+    if existing:
+        prompt += f" Already listed skills: {existing}."
+    prompt += (
+        " Respond with two sections:\nTechnical Skills:\n- skill1\n- skill2\nSoft "
+        "Skills:\n- skillA\n- skillB"
+    )
+
+    try:
+        resp = call_with_retry(
+            openai.chat.completions.create,  # type: ignore[attr-defined]
+            model=config.OPENAI_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.4,
+            max_tokens=200,
+        )
+        content = resp.choices[0].message.content or ""
+    except Exception as e:  # pragma: no cover - network errors
+        logger.error(f"OpenAI API Fehler bei suggest_additional_skills: {e}")
+        return {"technical": [], "soft": []}
+
+    tech: list[str] = []
+    soft: list[str] = []
+    current = None
+    for line in content.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if line.lower().startswith("technical skills"):
+            current = tech
+            continue
+        if line.lower().startswith("soft skills"):
+            current = soft
+            continue
+        line = re.sub(r"^(\d+[\.\)]\s*|[-*\u2022]\s*)", "", line)
+        if current is not None and line:
+            current.append(line)
+
+    return {"technical": tech[:tech_count], "soft": soft[:soft_count]}
+
+
 # Wrapper-Funktion mit automatischen Wiederholungen für OpenAI-Aufrufe
 @retry(
     reraise=True,
