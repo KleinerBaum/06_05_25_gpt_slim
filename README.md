@@ -69,6 +69,9 @@ SALARY_ESTIMATION_MODEL = "gpt-4o-mini"
 SECRET_KEY = "replace-me"
 DATABASE_URL = "postgresql://user:pass@host/db"
 ```
+Replace `YOUR_OPENAI_KEY` with your actual key or set the
+`OPENAI_API_KEY` environment variable. Streamlit will read the
+environment variable when the key is not present in `secrets.toml`.
 
 ## Running the App
 
