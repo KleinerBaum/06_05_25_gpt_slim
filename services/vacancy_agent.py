@@ -5,6 +5,7 @@ from typing import Any, Dict, cast
 
 import openai  # type: ignore
 from utils import config
+import utils.llm_utils as llm_utils
 
 openai = cast(Any, openai)
 
@@ -125,7 +126,8 @@ def auto_fill_job_spec(
         {"role": "user", "content": user_message},
     ]
     try:
-        response = openai.ChatCompletion.create(  # type: ignore[attr-defined]
+        response = llm_utils.call_with_retry(
+            openai.ChatCompletion.create,  # type: ignore[attr-defined]
             model=config.OPENAI_MODEL,
             messages=messages,
             functions=FUNCTIONS,
@@ -177,7 +179,8 @@ def auto_fill_job_spec(
         # Ergebnis der Funktion als Assistant-Antwort hinzufügen und zweiten API-Call durchführen
         messages.append({"role": "function", "name": func_name, "content": func_result})
         try:
-            second_response = openai.ChatCompletion.create(  # type: ignore[attr-defined]
+            second_response = llm_utils.call_with_retry(
+                openai.ChatCompletion.create,  # type: ignore[attr-defined]
                 model=config.OPENAI_MODEL,
                 messages=messages,
                 functions=FUNCTIONS,

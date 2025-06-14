@@ -9,6 +9,7 @@ import numpy as np
 import openai  # type: ignore
 
 from utils import config
+from utils.llm_utils import call_with_retry
 
 
 class VectorStore:
@@ -37,7 +38,8 @@ class VectorStore:
 
     def _embed(self, texts: List[str]) -> np.ndarray:
         """Embed texts via OpenAI embeddings."""
-        result = openai.Embedding.create(  # type: ignore[attr-defined]
+        result = call_with_retry(
+            openai.Embedding.create,  # type: ignore[attr-defined]
             model="text-embedding-3-small",
             input=texts,
         )
