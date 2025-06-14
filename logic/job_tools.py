@@ -52,3 +52,42 @@ def highlight_keywords(text: str, keywords: List[str]) -> str:
         return text
     pattern = re.compile(r"(" + "|".join(map(re.escape, keywords)) + r")", re.I)
     return pattern.sub(r"**\1**", text)
+
+
+def build_boolean_query(job_title: str, skills: List[str]) -> str:
+    """Return a simple boolean search string for external candidate platforms."""
+    title_part = f'"{normalize_job_title(job_title)}"' if job_title else ""
+    skill_terms = [f'"{s}"' for s in skills if s]
+    query_parts = [p for p in [title_part, " OR ".join(skill_terms)] if p]
+    if len(query_parts) == 1:
+        return query_parts[0]
+    return f"{query_parts[0]} AND ({query_parts[1]})"
+
+
+def generate_interview_questions(
+    responsibilities: str, num_questions: int = 5
+) -> List[str]:
+    """Generate basic interview questions from given responsibilities text."""
+    if not responsibilities:
+        return []
+    lines = [
+        ln.strip(" -*\u2022") for ln in responsibilities.splitlines() if ln.strip()
+    ]
+    if not lines:
+        lines = [r.strip() for r in re.split(r"[.;]", responsibilities) if r.strip()]
+    questions = []
+    for item in lines[:num_questions]:
+        questions.append(f"Can you describe your experience with {item}?")
+    while len(questions) < num_questions:
+        questions.append("Tell us more about your relevant experience.")
+    return questions
+
+
+def summarize_job_ad(text: str, max_words: int = 50) -> str:
+    """Create a short summary from a job advertisement text."""
+    if not text:
+        return ""
+    words = text.split()
+    if len(words) > max_words:
+        return " ".join(words[:max_words]) + "..."
+    return text
