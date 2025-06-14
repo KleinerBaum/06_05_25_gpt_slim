@@ -67,3 +67,14 @@ You can also place these values in a `.env` file and load them in Python via
 ## ESCO API Prompt Templates
 
 A collection of ready-made prompts for querying the ESCO API is available in [docs/esco_api_prompts.md](docs/esco_api_prompts.md).
+
+## Testing
+
+The CI pipeline installs the project in editable mode so that imports work consistently:
+
+```bash
+pip install -e .
+pytest
+```
+
+Run these commands locally to mirror the GitHub Actions setup.
