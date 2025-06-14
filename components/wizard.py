@@ -6,6 +6,8 @@ import re
 
 import streamlit as st
 import requests  # type: ignore
+from readability import Document
+from bs4 import BeautifulSoup
 from streamlit_sortables import sort_items
 
 # Vacalyser-Module und Utilities importieren
@@ -88,15 +90,27 @@ def fetch_url_text(url: str) -> str:
         return ""
     content_type = resp.headers.get("content-type", "").lower()
     if "text/html" in content_type:
-        data = scrape_company_site(url)
-        if isinstance(data, dict):
-            text = (
-                (data.get("title", "") or "")
-                + "\n"
-                + (data.get("description", "") or "")
-            )
+        html = resp.text
+        if "jobposting" in html.lower() or any(
+            kw in url.lower() for kw in ["job", "career", "karriere"]
+        ):
+            try:
+                doc = Document(html)
+                soup = BeautifulSoup(doc.summary(), "html.parser")
+                text = soup.get_text(separator="\n")
+            except Exception:
+                soup = BeautifulSoup(html, "html.parser")
+                text = soup.get_text(separator="\n")
         else:
-            text = str(data)
+            data = scrape_company_site(url)
+            if isinstance(data, dict):
+                text = (
+                    (data.get("title", "") or "")
+                    + "\n"
+                    + (data.get("description", "") or "")
+                )
+            else:
+                text = str(data)
     elif "pdf" in content_type:
         text = extract_text_from_file(resp.content, "file.pdf")
     elif "officedocument" in content_type or "msword" in content_type:
