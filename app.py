@@ -26,15 +26,19 @@ _set_background("images/AdobeStock_506577005.jpeg")
 
 # App-wide language selection (German or English)
 if "language" not in st.session_state:
-    st.session_state["language"] = (
-        "Deutsch"  # default to German (can default to English as needed)
+    st.session_state["language"] = "Deutsch"  # default to German
+
+with st.sidebar:
+    language_choice = st.radio(
+        "🌐 Sprache / Language",
+        ("Deutsch", "English"),
+        index=0 if st.session_state["language"] == "Deutsch" else 1,
     )
-language_choice = st.sidebar.radio(
-    "🌐 Sprache / Language",
-    ("Deutsch", "English"),
-    index=0 if st.session_state["language"] == "Deutsch" else 1,
-)
-st.session_state["language"] = language_choice
+    st.session_state["language"] = language_choice
+
+    st.page_link("app.py", label="Home", icon="🏠")
+    st.page_link("pages/2_🏠_Advantages.py")
+    st.page_link("pages/3_💡_Tech_Overview.py")
 
 # Run the main wizard interface (UI logic is handled in wizard.py based on selected language)
 wizard.run_wizard()
