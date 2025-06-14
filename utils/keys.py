@@ -15,7 +15,7 @@ STEP_KEYS: dict[int, list[str]] = {
         "uploaded_file",  # ⬚
         "parsed_data_raw",  # ⬚ (internal raw text storage)
     ],
-    2: [  # Step 2: Basic Job & Company Info
+    2: [  # Step 2: Provide some Details about "company-name"
         "company_name",  # ★
         "job_type",  # ★
         "contract_type",  # ★

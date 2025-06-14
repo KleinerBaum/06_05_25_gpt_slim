@@ -437,11 +437,20 @@ def _handle_static_step(step: int, render_func):
 # Schritte 2–7: Formulareingaben
 def render_step2_static():
     lang = st.session_state.get("lang", "English")
-    st.title(
-        "Schritt 2: Grundlegende Stellen- & Firmendaten"
-        if lang == "Deutsch"
-        else "Step 2: Basic Job & Company Info"
-    )
+    company = st.session_state.get("company_name", "")
+    if lang == "Deutsch":
+        title = (
+            f'Gib einige Details zu "{company}" an'
+            if company
+            else "Schritt 2: Grundlegende Stellen- & Firmendaten"
+        )
+    else:
+        title = (
+            f'Provide some Details about "{company}"'
+            if company
+            else "Step 2: Basic Job & Company Info"
+        )
+    st.title(title)
     display_step_summary(2)
     company_name = st.text_input(
         "Unternehmensname" if lang == "Deutsch" else "Company Name",
@@ -455,41 +464,64 @@ def render_step2_static():
             else "Official name of the hiring company."
         ),
     )
-    brand_name = st.text_input(
-        (
-            "Markenname (falls abweichend)"
-            if lang == "Deutsch"
-            else "Brand Name (if different)"
-        ),
-        value=st.session_state.get("brand_name", ""),
-        placeholder=(
-            "z.B. Mutterfirma AG" if lang == "Deutsch" else "e.g. Parent Company Inc."
-        ),
-        help=(
-            "Falls unter einem anderen Marken- oder Firmennamen ausgeschrieben."
-            if lang == "Deutsch"
-            else "If the job is advertised under a different brand or subsidiary name."
-        ),
-    )
-    headquarters_location = st.text_input(
-        "Hauptsitz (Ort)" if lang == "Deutsch" else "Headquarters Location",
-        value=st.session_state.get("headquarters_location", ""),
-        placeholder=(
-            "z.B. Berlin, Deutschland" if lang == "Deutsch" else "e.g. Berlin, Germany"
-        ),
-        help=(
-            "Stadt und Land des Firmensitzes."
-            if lang == "Deutsch"
-            else "City and country of the company's headquarters."
-        ),
-    )
-    company_website = st.text_input(
-        "Webseite des Unternehmens" if lang == "Deutsch" else "Company Website",
-        value=st.session_state.get("company_website", ""),
-        placeholder=(
-            "z.B. https://firma.de" if lang == "Deutsch" else "e.g. https://company.com"
-        ),
-    )
+    col_a, col_b = st.columns(2)
+    with col_a:
+        company_website = st.text_input(
+            "Webseite des Unternehmens" if lang == "Deutsch" else "Company Website",
+            value=st.session_state.get("company_website", ""),
+            placeholder=(
+                "z.B. https://firma.de"
+                if lang == "Deutsch"
+                else "e.g. https://company.com"
+            ),
+        )
+        headquarters_location = st.text_input(
+            "Hauptsitz (Ort)" if lang == "Deutsch" else "Headquarters Location",
+            value=st.session_state.get("headquarters_location", ""),
+            placeholder=(
+                "z.B. Berlin, Deutschland"
+                if lang == "Deutsch"
+                else "e.g. Berlin, Germany"
+            ),
+            help=(
+                "Stadt und Land des Firmensitzes."
+                if lang == "Deutsch"
+                else "City and country of the company's headquarters."
+            ),
+        )
+    with col_b:
+        city = st.text_input(
+            "Dienstort (Stadt)" if lang == "Deutsch" else "City (Job Location)",
+            value=st.session_state.get("city", ""),
+            placeholder="z.B. München" if lang == "Deutsch" else "e.g. London",
+        )
+        brand_name = st.text_input(
+            (
+                "Markenname (falls abweichend)"
+                if lang == "Deutsch"
+                else "Brand Name (if different)"
+            ),
+            value=st.session_state.get("brand_name", ""),
+            placeholder=(
+                "z.B. Mutterfirma AG"
+                if lang == "Deutsch"
+                else "e.g. Parent Company Inc."
+            ),
+            help=(
+                "Falls unter einem anderen Marken- oder Firmennamen ausgeschrieben."
+                if lang == "Deutsch"
+                else "If the job is advertised under a different brand or subsidiary name."
+            ),
+        )
+        team_structure = st.text_area(
+            "Teamstruktur" if lang == "Deutsch" else "Team Structure",
+            value=st.session_state.get("team_structure", ""),
+            placeholder=(
+                "Beschreibe den Teamaufbau, Berichtslinien, etc."
+                if lang == "Deutsch"
+                else "Describe the team setup, reporting hierarchy, etc."
+            ),
+        )
     exact_known = st.toggle(
         "Exaktes Datum?" if lang == "Deutsch" else "Exact date?",
         value=_date_from_state("date_of_employment_start") is not None,
@@ -532,20 +564,6 @@ def render_step2_static():
         "Karrierestufe" if lang == "Deutsch" else "Job Level",
         ["Entry-level", "Mid-level", "Senior", "Director", "C-level", "Other"],
         index=0,
-    )
-    city = st.text_input(
-        "Dienstort (Stadt)" if lang == "Deutsch" else "City (Job Location)",
-        value=st.session_state.get("city", ""),
-        placeholder="z.B. München" if lang == "Deutsch" else "e.g. London",
-    )
-    team_structure = st.text_area(
-        "Teamstruktur" if lang == "Deutsch" else "Team Structure",
-        value=st.session_state.get("team_structure", ""),
-        placeholder=(
-            "Beschreibe den Teamaufbau, Berichtslinien, etc."
-            if lang == "Deutsch"
-            else "Describe the team setup, reporting hierarchy, etc."
-        ),
     )
     return {
         "company_name": company_name,
