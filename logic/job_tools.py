@@ -121,3 +121,28 @@ def summarize_job_ad(text: str, max_words: int = 50) -> str:
     if len(words) > max_words:
         return " ".join(words[:max_words]) + "..."
     return text
+
+
+def generate_task_plan(task_list: str) -> dict[str, list[str]]:
+    """Split tasks into a basic 30/60/90 day plan.
+
+    Args:
+        task_list: Multiline string of role tasks or responsibilities.
+
+    Returns:
+        Dict with ``day_30``, ``day_60`` and ``day_90`` lists.
+    """
+
+    if not task_list:
+        return {"day_30": [], "day_60": [], "day_90": []}
+
+    tasks = [t.strip(" -*\u2022") for t in task_list.splitlines() if t.strip()]
+    if not tasks:
+        return {"day_30": [], "day_60": [], "day_90": []}
+
+    chunk = max(1, len(tasks) // 3)
+    return {
+        "day_30": tasks[:chunk],
+        "day_60": tasks[chunk : 2 * chunk],
+        "day_90": tasks[2 * chunk :],
+    }

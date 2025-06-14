@@ -6,6 +6,7 @@ from logic.job_tools import (
     build_boolean_query,
     generate_interview_questions,
     summarize_job_ad,
+    generate_task_plan,
 )
 from utils.keys import STEP_KEYS
 
@@ -57,3 +58,10 @@ def test_summarize_job_ad() -> None:
     summary = summarize_job_ad(text, max_words=5)
     assert summary.endswith("...")
     assert len(summary.split()) <= 6
+
+
+def test_generate_task_plan_splits_list() -> None:
+    tasks = "Task A\nTask B\nTask C\nTask D"
+    plan = generate_task_plan(tasks)
+    assert set(plan.keys()) == {"day_30", "day_60", "day_90"}
+    assert plan["day_30"]

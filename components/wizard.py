@@ -671,6 +671,15 @@ def render_step4_static():
             else "e.g. Project management, team coordination"
         ),
     )
+    if st.button("30/60/90-Plan" if lang == "Deutsch" else "30/60/90 Plan"):
+        from logic.job_tools import generate_task_plan
+
+        plan = generate_task_plan(task_list or key_responsibilities)
+        with st.expander("30/60/90 Plan", expanded=True):
+            for label, items in plan.items():
+                st.markdown(f"**{label.replace('_', '/')}**")
+                for it in items:
+                    st.write(f"- {it}")
     return {"task_list": task_list, "key_responsibilities": key_responsibilities}
 
 
@@ -1180,6 +1189,30 @@ def render_step8():
         if lang == "Deutsch"
         else "🎉 All steps completed! Review all inputs and proceed to generate the job description."
     )
+
+    if st.button("Interviewfragen" if lang == "Deutsch" else "Interview Questions"):
+        from logic.job_tools import generate_interview_questions
+
+        questions = generate_interview_questions(
+            st.session_state.get("key_responsibilities", "")
+            or st.session_state.get("task_list", "")
+        )
+        st.session_state["generated_interview_prep"] = "\n".join(questions)
+        with st.expander("Interview Questions", expanded=True):
+            for q in questions:
+                st.write("- " + q)
+
+    if st.button("Boolean Query"):
+        from logic.job_tools import build_boolean_query
+
+        skills = [
+            s.strip()
+            for s in st.session_state.get("must_have_skills", "").split("\n")
+            if s.strip()
+        ]
+        query = build_boolean_query(st.session_state.get("job_title", ""), skills)
+        st.session_state["generated_boolean_query"] = query
+        st.text_area("Search Query", value=query, height=80)
 
 
 def run_wizard():
