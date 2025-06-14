@@ -49,6 +49,7 @@ You can also set the variables via a `.env` file during local development.
 ### Features
 
 - Start discovery page can scrape basic company information when a website URL is provided.
+- Vacancy agent includes automatic JSON repair to ensure outputs match the JobSpec schema (tested in `tests/test_vacancy_agent.py`).
 
 ## ESCO API Prompt Templates
 
