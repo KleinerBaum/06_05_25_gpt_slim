@@ -1,4 +1,7 @@
 from __future__ import annotations
+from collections.abc import MutableMapping
+from typing import Any, cast
+
 import streamlit as st
 import requests  # type: ignore
 from streamlit_sortables import sort_items
@@ -87,10 +90,22 @@ def fetch_url_text(url: str) -> str:
     return clean_text(text or "")
 
 
-def match_and_store_keys(raw_text: str) -> None:
-    """Fallback-Parser: extrahiert Felder anhand von vordefinierten Labels im Text."""
+def match_and_store_keys(
+    raw_text: str, state: MutableMapping[str, Any] | None = None
+) -> None:
+    """Parse labeled lines and store values in ``state`` if missing.
+
+    This fallback parser looks for simple ``"Label: value"`` patterns in the
+    provided text. It only sets a field when the current value is falsy so that
+    manually entered or AI‑generated values are not overwritten.
+    """
+
     if not raw_text:
         return
+
+    if state is None:
+        state = cast(MutableMapping[str, Any], st.session_state)
+
     labels = {
         "job_title": "Job Title:",
         "company_name": "Company Name:",
@@ -112,17 +127,23 @@ def match_and_store_keys(raw_text: str) -> None:
         "must_have_skills": "Requirements:",
         "nice_to_have_skills": "Preferred Skills:",
     }
+
     for key, label in labels.items():
+        if state.get(key):
+            continue
         if label in raw_text:
             try:
-                # Text direkt nach dem Label bis zum Zeilenende extrahieren
                 value = (
-                    raw_text.split(label, 1)[1].split("\n", 1)[0].strip().rstrip(":;,.")
+                    raw_text.split(label, 1)[1]
+                    .split("\n", 1)[0]
+                    .lstrip(": ")
+                    .rstrip(":;,.")
+                    .strip()
                 )
             except IndexError:
                 continue
             if value:
-                st.session_state[key] = value
+                state[key] = value
 
 
 def display_step_summary(step: int) -> None:
@@ -345,6 +366,8 @@ def start_discovery_page():
                 # TriggerEngine benachrichtigen, damit abhängige Felder berechnet werden
                 for k in result.keys():
                     _ensure_engine().notify_change(k, dict(st.session_state))
+                # Ergänze fehlende Felder über einfache Label-Erkennung
+                match_and_store_keys(raw_text)
                 skills = st.session_state.get("must_have_skills", "").split("\n")
                 highlighted = highlight_keywords(raw_text, skills)
                 with st.expander(
