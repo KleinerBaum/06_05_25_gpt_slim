@@ -1,5 +1,6 @@
 from __future__ import annotations
 from collections.abc import MutableMapping
+from datetime import date
 from typing import Any, cast
 
 import streamlit as st
@@ -60,6 +61,19 @@ def _int_from_state(key: str, default: int) -> int:
         return default if val is None else int(val)
     except (TypeError, ValueError):
         return default
+
+
+def _date_from_state(key: str) -> date | None:
+    """Return a ``date`` from session state if possible."""
+    val = st.session_state.get(key)
+    if isinstance(val, date):
+        return val
+    if isinstance(val, str):
+        try:
+            return date.fromisoformat(val)
+        except ValueError:
+            return None
+    return None
 
 
 def fetch_url_text(url: str) -> str:
@@ -478,15 +492,34 @@ def render_step2_static():
             "z.B. https://firma.de" if lang == "Deutsch" else "e.g. https://company.com"
         ),
     )
-    date_of_start = st.text_input(
-        "Bevorzugtes Eintrittsdatum" if lang == "Deutsch" else "Preferred Start Date",
-        value=st.session_state.get("date_of_employment_start", ""),
-        placeholder=(
-            "z.B. ab sofort oder 2025-01-15"
-            if lang == "Deutsch"
-            else "e.g. ASAP or 2025-01-15"
-        ),
+    exact_known = st.toggle(
+        "Exaktes Datum?" if lang == "Deutsch" else "Exact date?",
+        value=_date_from_state("date_of_employment_start") is not None,
     )
+    if exact_known:
+        default_date = _date_from_state("date_of_employment_start") or date.today()
+        date_of_start = st.date_input(
+            (
+                "Bevorzugtes Eintrittsdatum"
+                if lang == "Deutsch"
+                else "Preferred Start Date"
+            ),
+            value=default_date,
+        ).isoformat()
+    else:
+        date_of_start = st.text_input(
+            (
+                "Bevorzugtes Eintrittsdatum"
+                if lang == "Deutsch"
+                else "Preferred Start Date"
+            ),
+            value=st.session_state.get("date_of_employment_start", ""),
+            placeholder=(
+                "z.B. ab sofort oder 2025-01-15"
+                if lang == "Deutsch"
+                else "e.g. ASAP or 2025-01-15"
+            ),
+        )
     job_type = st.selectbox(
         "Art der Stelle" if lang == "Deutsch" else "Job Type",
         ["Full-Time", "Part-Time", "Internship", "Freelance", "Volunteer", "Other"],
@@ -779,7 +812,7 @@ def render_step6_static():
         _int_from_state("vacation_days", 30),
     )
     vacation_days_str = str(vacation_days)
-    remote_possible = st.checkbox(
+    remote_possible = st.toggle(
         "Remote-Arbeit möglich?" if lang == "Deutsch" else "Remote work possible?",
         value=str(st.session_state.get("remote_work_policy", "")).lower()
         in ("ja", "yes", "true"),
@@ -798,7 +831,7 @@ def render_step6_static():
             else "e.g. Yes (flexible schedule)"
         ),
     )
-    relocation_possible = st.checkbox(
+    relocation_possible = st.toggle(
         "Umzugsunterstützung?" if lang == "Deutsch" else "Relocation assistance?",
         value=str(st.session_state.get("relocation_assistance", "")).lower()
         in ("ja", "yes", "true"),
@@ -852,11 +885,13 @@ def render_step7_static():
             else "e.g. 6 weeks from first interview to offer"
         ),
     )
-    number_of_interviews = st.text_input(
+    number_of_interviews = st.slider(
         "Anzahl der Interviews" if lang == "Deutsch" else "Number of Interviews",
-        value=st.session_state.get("number_of_interviews", ""),
-        placeholder="z.B. 3 Runden" if lang == "Deutsch" else "e.g. 3 rounds",
+        1,
+        10,
+        _int_from_state("number_of_interviews", 3),
     )
+    number_of_interviews_str = str(number_of_interviews)
     interview_format = st.text_input(
         "Interview-Format" if lang == "Deutsch" else "Interview Format",
         value=st.session_state.get("interview_format", ""),
@@ -900,7 +935,7 @@ def render_step7_static():
         "recruitment_contact_email": recruitment_contact_email,
         "recruitment_steps": recruitment_steps,
         "recruitment_timeline": recruitment_timeline,
-        "number_of_interviews": number_of_interviews,
+        "number_of_interviews": number_of_interviews_str,
         "interview_format": interview_format,
         "assessment_tests": assessment_tests,
         "onboarding_process_overview": onboarding_process_overview,
@@ -969,7 +1004,7 @@ def render_step8():
     st.session_state["language_of_ad"] = (
         "German" if selected_lang in ["German", "Deutsch"] else "English"
     )
-    translation_required = st.checkbox(
+    translation_required = st.toggle(
         (
             "Übersetzung der Anzeige benötigt?"
             if lang == "Deutsch"
