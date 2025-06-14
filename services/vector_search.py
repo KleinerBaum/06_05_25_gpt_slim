@@ -37,11 +37,11 @@ class VectorStore:
 
     def _embed(self, texts: List[str]) -> np.ndarray:
         """Embed texts via OpenAI embeddings."""
-        result = openai.Embedding.create(  # type: ignore[attr-defined]
+        result = openai.embeddings.create(
             model="text-embedding-3-small",
             input=texts,
         )
-        vecs = np.array([d["embedding"] for d in result["data"]], dtype="float32")
+        vecs = np.array([d.embedding for d in result.data], dtype="float32")
         return vecs
 
     def add_texts(self, texts: List[str]) -> None:

@@ -22,7 +22,7 @@ def summarize_text(text: str, quality: str = "standard") -> str:
     )
     try:
         response = call_with_retry(
-            openai.ChatCompletion.create,  # type: ignore[attr-defined]
+            openai.chat.completions.create,  # type: ignore[attr-defined]
             model=config.OPENAI_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=temperature,
