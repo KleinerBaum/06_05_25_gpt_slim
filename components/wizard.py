@@ -510,12 +510,13 @@ def render_step2_static():
 def render_step3_static():
     lang = st.session_state.get("lang", "English")
     company = st.session_state.get("company_name", "")
+    job_title = st.session_state.get("job_title", "")
     if lang == "Deutsch":
-        title = "Schritt 3: Rollenbeschreibung"
+        title = f"Schritt 3: {job_title or 'Rollenbeschreibung'}"
         if company:
             title += f" – {company}"
     else:
-        title = "Step 3: Role Definition"
+        title = f"Step 3: {job_title or 'Role Definition'}"
         if company:
             title += f" – {company}"
     st.title(title)
