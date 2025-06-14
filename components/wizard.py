@@ -417,7 +417,6 @@ def start_discovery_page():
 
 def _handle_static_step(step: int, render_func):
     """Verarbeitet einen statischen Schritt: Speichert Eingaben und aktualisiert abhängige Felder."""
-    lang = st.session_state.get("lang", "English")
     render_vals = render_func()
     # Eingegebene Werte speichern und TriggerEngine benachrichtigen
     for k, v in render_vals.items():
@@ -425,13 +424,7 @@ def _handle_static_step(step: int, render_func):
         _ensure_engine().notify_change(k, dict(st.session_state))
     # Zusammenfassung der bisher ausgefüllten Felder anzeigen
     display_step_summary(step)
-    # Button zum nächsten Schritt
-    if st.button(
-        "Weiter zu Schritt {}".format(step + 1)
-        if lang == "Deutsch"
-        else "Continue to Step {}".format(step + 1)
-    ):
-        st.session_state["wizard_step"] = step + 1
+    # Der nächste Schritt wird über die Navigationsbuttons gesteuert
 
 
 # Schritte 2–7: Formulareingaben
