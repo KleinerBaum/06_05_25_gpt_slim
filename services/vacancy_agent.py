@@ -71,12 +71,16 @@ def auto_fill_job_spec(
     file_name: str = "",
     summary_quality: str = "standard",
 ) -> Dict[str, Any]:
-    """
-    Analysiert eine Stellenanzeige von einer URL oder Datei und gibt die extrahierten Felder als Dict zurück.
-    - input_url: URL einer Stellenanzeige (falls angegeben).
-    - file_bytes: Rohbytes einer hochgeladenen Stellenbeschreibung.
-    - file_name: Dateiname der hochgeladenen Datei.
-    - summary_quality: {'economy', 'standard', 'high'} – bei sehr langen Texten wie stark zusammengefasst werden soll.
+    """Analyse a job ad from URL or file and return parsed fields.
+
+    Args:
+        input_url: Optional URL to the job advertisement.
+        file_bytes: Raw bytes of an uploaded job-ad file.
+        file_name: File name of the uploaded document.
+        summary_quality: Level of summarization for long documents.
+
+    Returns:
+        Dictionary matching the ``JobSpec`` schema with extracted values.
     """
     # Eingabe validieren
     if not input_url and not file_bytes:
@@ -233,7 +237,14 @@ def auto_fill_job_spec(
 
 
 def fix_json_output(raw_json: str) -> dict:
-    """Try to repair JSON string to match JobSpec schema."""
+    """Attempt to repair a JSON string so it validates as ``JobSpec``.
+
+    Args:
+        raw_json: JSON string returned by the LLM.
+
+    Returns:
+        Parsed dictionary if successful, otherwise an empty dict.
+    """
     from models.job_models import JobSpec
 
     try:

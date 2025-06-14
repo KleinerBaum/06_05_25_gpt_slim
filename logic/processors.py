@@ -16,7 +16,14 @@ _SUGGESTION_MODEL = "gpt-3.5-turbo"
 
 
 def update_task_list(state: dict[str, Any]) -> None:
-    """Auto-generate a general task list from the job title (and industry)."""
+    """Populate ``task_list`` using the job title and industry.
+
+    Args:
+        state: Current wizard state dictionary.
+
+    Returns:
+        None. The ``state`` dictionary is updated in place.
+    """
     if state.get("task_list"):
         return  # already specified by user
     role = state.get("job_title", "") or state.get("role_description", "")
@@ -44,7 +51,14 @@ def update_task_list(state: dict[str, Any]) -> None:
 
 
 def update_must_have_skills(state: dict[str, Any]) -> None:
-    """Auto-generate must-have skills based on the role (and tasks)."""
+    """Fill in ``must_have_skills`` derived from role and tasks.
+
+    Args:
+        state: Wizard state containing job data.
+
+    Returns:
+        None. ``state`` will be modified when suggestions are available.
+    """
     if state.get("must_have_skills"):
         return
     if not state.get("job_title") and not state.get("task_list"):
@@ -72,7 +86,14 @@ def update_must_have_skills(state: dict[str, Any]) -> None:
 
 
 def update_nice_to_have_skills(state: dict[str, Any]) -> None:
-    """Auto-generate nice-to-have skills complementing the must-haves."""
+    """Suggest extra skills that complement the must-haves.
+
+    Args:
+        state: Wizard state containing job data.
+
+    Returns:
+        None. Updates ``nice_to_have_skills`` in ``state`` when applicable.
+    """
     if state.get("nice_to_have_skills"):
         return
     must = state.get("must_have_skills", "")
@@ -100,7 +121,14 @@ def update_nice_to_have_skills(state: dict[str, Any]) -> None:
 
 
 def update_salary_range(state: dict[str, Any]) -> None:
-    """Estimate a realistic salary range (EUR) based on role, location, tasks, etc."""
+    """Estimate a realistic EUR salary range for the role.
+
+    Args:
+        state: Wizard state with job details used for estimation.
+
+    Returns:
+        None. ``state['salary_range']`` will be set when a range was found.
+    """
     current = state.get("salary_range", "")
     if current and str(current).strip().lower() not in {"", "competitive"}:
         return  # already set to a specific range
@@ -137,7 +165,14 @@ def update_salary_range(state: dict[str, Any]) -> None:
 
 
 def update_publication_channels(state: dict[str, Any]) -> None:
-    """Set recommended publication channels based on remote work policy."""
+    """Set recommended publication channels using remote policy.
+
+    Args:
+        state: Wizard state containing the ``remote_work_policy`` field.
+
+    Returns:
+        None. ``state['desired_publication_channels']`` may be updated.
+    """
     raw_policy = state.get("remote_work_policy", "")
     if isinstance(raw_policy, (list, tuple)):
         remote = " ".join(str(v).lower() for v in raw_policy)
@@ -148,7 +183,14 @@ def update_publication_channels(state: dict[str, Any]) -> None:
 
 
 def update_bonus_scheme(state: dict[str, Any]) -> None:
-    """Suggest a bonus scheme for mid-to-senior level roles."""
+    """Suggest a bonus scheme for mid-to-senior level roles.
+
+    Args:
+        state: Wizard state that may contain ``job_level``.
+
+    Returns:
+        None. ``state['bonus_scheme']`` will be set if applicable.
+    """
     if state.get("bonus_scheme"):
         return
     level = str(state.get("job_level", "")).lower()
@@ -157,7 +199,14 @@ def update_bonus_scheme(state: dict[str, Any]) -> None:
 
 
 def update_commission_structure(state: dict[str, Any]) -> None:
-    """Suggest a commission structure for sales-related roles."""
+    """Add a commission structure suggestion for sales roles.
+
+    Args:
+        state: Wizard state with potential ``job_title`` information.
+
+    Returns:
+        None. ``state['commission_structure']`` will be updated if relevant.
+    """
     if state.get("commission_structure"):
         return
     title = str(state.get("job_title", "")).lower()
@@ -174,7 +223,14 @@ def update_commission_structure(state: dict[str, Any]) -> None:
 
 
 def update_translation_required(state: dict[str, Any]) -> None:
-    """Determine if a translation is needed based on ad language vs required languages."""
+    """Mark if translation is needed comparing ad and required languages.
+
+    Args:
+        state: Wizard state containing language information.
+
+    Returns:
+        None. ``state['translation_required']`` will be set to ``"Yes"`` or ``"No"``.
+    """
     if not state.get("language_requirements"):
         return
     lang_req = state["language_requirements"].strip()
@@ -190,7 +246,14 @@ def update_translation_required(state: dict[str, Any]) -> None:
 
 
 def register_all_processors(engine: TriggerEngine) -> None:
-    """Register all processor functions with the TriggerEngine."""
+    """Register all processor functions with the provided engine.
+
+    Args:
+        engine: Instance of :class:`TriggerEngine` used to run processors.
+
+    Returns:
+        None.
+    """
     engine.register_processor("task_list", update_task_list)
     engine.register_processor("must_have_skills", update_must_have_skills)
     engine.register_processor("nice_to_have_skills", update_nice_to_have_skills)

@@ -26,7 +26,14 @@ from typing import Any
     return_type="object",
 )
 def scrape_company_site(url: str) -> dict:
-    """Return the title and meta description of the given URL."""
+    """Fetch the ``<title>`` and meta description of a webpage.
+
+    Args:
+        url: Company homepage URL.
+
+    Returns:
+        Dictionary with ``title`` and ``description`` keys. Empty dict on error.
+    """
     import requests  # type: ignore
     from bs4 import BeautifulSoup
 
