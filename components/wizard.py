@@ -1236,8 +1236,13 @@ def run_wizard():
     _nav(step)
 
 
-def _nav(step: int):
-    """Navigations-Buttons für Weiter/Zurück je nach aktuellem Schritt anzeigen."""
+def _nav(step: int) -> None:
+    """Display navigation buttons for the wizard.
+
+    A "Home" button is shown from step 2 onward and jumps back to the first
+    screen. Buttons appear in the order Next → Home → Back.
+    """
+
     lang = st.session_state.get("lang", "English")
     if step < 8:
         st.button(
@@ -1246,6 +1251,11 @@ def _nav(step: int):
             key=f"next_{step}",
         )
     if step > 1:
+        st.button(
+            "🏠 Home",
+            on_click=lambda: st.session_state.update({"wizard_step": 1}),
+            key=f"home_{step}",
+        )
         st.button(
             "Zurück" if lang == "Deutsch" else "Back",
             on_click=lambda: st.session_state.update({"wizard_step": step - 1}),
