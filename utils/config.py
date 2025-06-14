@@ -24,7 +24,8 @@ VECTOR_STORE_PATH = os.getenv("VECTOR_STORE_PATH", "./vector_store")
 # OpenAI Modell für ChatCompletion (mit Function Calling)
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", DEFAULT_MODEL)
 # OpenAI API Key aus .env oder Streamlit Secrets
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+# Surrounding quotes in `.env` will be trimmed automatically
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip("\"' ")
 # Modellname für Gehaltsschätzung (OpenAI)
 SALARY_ESTIMATION_MODEL = os.getenv("SALARY_ESTIMATION_MODEL", "gpt-4o-mini")
 
