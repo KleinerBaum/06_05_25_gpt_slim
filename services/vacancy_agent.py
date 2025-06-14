@@ -1,10 +1,17 @@
 from __future__ import annotations
+import asyncio
 import json
 import logging
+import os
 from typing import Any, Dict, cast
 
 import openai  # type: ignore
 from utils import config
+
+try:
+    from agents import Agent, Runner, function_tool
+except Exception:  # pragma: no cover - optional dependency
+    Agent = Runner = function_tool = None  # type: ignore
 
 openai = cast(Any, openai)
 
@@ -159,6 +166,71 @@ SYSTEM_MESSAGE = (
     "Return the information as JSON that matches the schema of the JobSpec model, with no extra commentary."
 )
 
+# Optional: Agent-based execution using the OpenAI Agents SDK
+USE_AGENTS_SDK = os.getenv("USE_AGENTS_SDK", "0") == "1"
+
+if Agent is not None:
+
+    @function_tool
+    def _agent_scrape_company_site(
+        company_url: str, max_depth: int = 1, include_html: bool = False
+    ) -> str:
+        from services.scraping_tools import scrape_company_site
+
+        data = scrape_company_site(
+            company_url, max_depth=max_depth, include_html=include_html
+        )
+        if isinstance(data, dict):
+            return (
+                (data.get("title") or "") + "\n" + (data.get("description") or "")
+            ).strip()
+        return str(data)
+
+    @function_tool
+    def _agent_extract_text_from_file(file_content: bytes, filename: str) -> str:
+        from logic.file_tools import extract_text_from_file
+
+        return extract_text_from_file(file_content, filename)
+
+    @function_tool
+    def _agent_retrieve_esco_skills(
+        job_title: str,
+        description: str | None = None,
+        max_results: int = 15,
+        language: str = "en",
+    ) -> list[str]:
+        from services.new_tools import retrieve_esco_skills
+
+        return retrieve_esco_skills(job_title, description, max_results, language)
+
+    @function_tool
+    def _agent_update_salary_range(
+        job_title: str,
+        location: str,
+        seniority: str | None = None,
+        currency: str = "EUR",
+        spread_pct: float = 10,
+    ) -> str:
+        from services.new_tools import update_salary_range
+
+        return update_salary_range(job_title, location, seniority, currency, spread_pct)
+
+    @function_tool
+    def _agent_interview_prep_generator(
+        job_spec: str, num_questions: int = 10, language: str = "de"
+    ) -> list[str]:
+        from services.new_tools import interview_prep_generator
+
+        return interview_prep_generator(job_spec, num_questions, language)
+
+    @function_tool
+    def _agent_vector_search_candidates(
+        query: str, top_k: int = 5, vector_store_id: str | None = None
+    ) -> list[str]:
+        from services.new_tools import vector_search_candidates
+
+        return vector_search_candidates(query, top_k, vector_store_id)
+
 
 def auto_fill_job_spec(
     input_url: str = "",
@@ -217,26 +289,48 @@ def auto_fill_job_spec(
                     f"{summary}\nReturn the info as JSON per JobSpec."
                 )
 
-    # OpenAI API mit Function Calling
+    # OpenAI API mit Function Calling oder optional Agents SDK
     content = ""
     messages = [
         {"role": "system", "content": SYSTEM_MESSAGE},
         {"role": "user", "content": user_message},
     ]
-    try:
-        response = openai.chat.completions.create(  # type: ignore
-            model=config.OPENAI_MODEL,
-            messages=messages,
-            functions=FUNCTION_DEFS,
-            function_call="auto",
-            temperature=0.2,
-            max_tokens=1500,
-        )
-    except Exception as api_error:
-        logger.error(f"OpenAI API Fehler in auto_fill_job_spec: {api_error}")
-        return {}
-    first_message = response.choices[0].message
-    if hasattr(first_message, "function_call") and first_message.function_call:
+    if USE_AGENTS_SDK and Agent is not None:
+        agent_tools = [
+            _agent_scrape_company_site,
+            _agent_extract_text_from_file,
+            _agent_retrieve_esco_skills,
+            _agent_update_salary_range,
+            _agent_interview_prep_generator,
+            _agent_vector_search_candidates,
+        ]
+        agent = Agent(name="Vacalyser", instructions=SYSTEM_MESSAGE, tools=agent_tools)
+        try:
+            run_result = asyncio.run(Runner.run(agent, input=user_message))
+            content = run_result.final_output or ""
+        except Exception as api_error:  # pragma: no cover - network errors
+            logger.error(f"Agents SDK Fehler in auto_fill_job_spec: {api_error}")
+            return {}
+        first_message = None
+    else:
+        try:
+            response = openai.chat.completions.create(  # type: ignore
+                model=config.OPENAI_MODEL,
+                messages=messages,
+                functions=FUNCTION_DEFS,
+                function_call="auto",
+                temperature=0.2,
+                max_tokens=1500,
+            )
+        except Exception as api_error:
+            logger.error(f"OpenAI API Fehler in auto_fill_job_spec: {api_error}")
+            return {}
+        first_message = response.choices[0].message
+    if (
+        first_message is not None
+        and hasattr(first_message, "function_call")
+        and first_message.function_call
+    ):
         # Wenn das LLM eine Tool-Funktion aufruft, diese ausführen
         func_name = first_message.function_call.name
         func_args = {}
@@ -317,7 +411,8 @@ def auto_fill_job_spec(
         content = second_response.choices[0].message.content or ""
     else:
         # Das LLM hat direkt geantwortet (keine Funktion benötigt)
-        content = first_message.content or ""
+        if first_message is not None:
+            content = first_message.content or ""
     if not content:
         return {}
 
