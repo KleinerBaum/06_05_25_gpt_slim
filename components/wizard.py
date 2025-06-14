@@ -21,11 +21,17 @@ from utils import config
 # Session State initialisieren (nur beim ersten Aufruf)
 initialize_session_state()
 
-# UI-Sprache aus zentraler Einstellung übernehmen
-if "language" in st.session_state:
-    st.session_state["lang"] = (
-        "Deutsch" if st.session_state["language"] == "Deutsch" else "English"
-    )
+
+def update_language() -> None:
+    """Synchronize UI language with the global setting on each run."""
+    if "language" in st.session_state:
+        st.session_state["lang"] = (
+            "Deutsch" if st.session_state["language"] == "Deutsch" else "English"
+        )
+
+
+# Set the language immediately on import so subsequent functions can use it
+update_language()
 
 
 def _ensure_engine() -> TriggerEngine:
@@ -182,22 +188,22 @@ def start_discovery_page():
     # Schritt 1: Einstieg (Jobtitel/Quelle eingeben)
     lang = st.session_state.get("lang", "English")
     if lang == "Deutsch":
-        st.title("🚀 Erstelle die perfekte Stellenbeschreibung")
-        st.subheader("Von der ersten Idee bis zur fertigen Ausschreibung.")
+        st.title("🚀 Spitzenkräfte gewinnen – mit RoleCraft")
+        st.subheader("Vom ersten Konzept zur unwiderstehlichen Anzeige")
         intro_text = (
             "Willkommen bei **RoleCraft**.\n\n"
-            "Starte mit einem Jobtitel oder lade eine Anzeige hoch.\n"
-            "Unser KI-gestützter Wizard analysiert, ergänzt fehlende Infos und führt dich sicher zum perfekten Profil."
+            "Starten Sie mit einem Jobtitel oder laden Sie Ihre aktuelle Anzeige hoch.\n"
+            "Unsere KI veredelt jedes Detail und liefert Ihnen blitzschnell ein perfektes Anforderungsprofil."
         )
         btn_job = "➕ Jobtitel eingeben"
         btn_upload = "📂 PDF / DOCX hochladen"
     else:
-        st.title("🚀 Create the Perfect Job Description")
-        st.subheader("From the first idea to a fully crafted profile.")
+        st.title("🚀 Attract Top Talent with RoleCraft")
+        st.subheader("From concept to irresistible job ad")
         intro_text = (
             "Welcome to **RoleCraft**.\n\n"
-            "Start with a job title or upload an ad.\n"
-            "Our AI-powered wizard analyzes, fills gaps, and guides you seamlessly to a perfect profile."
+            "Begin with a job title or upload your existing posting.\n"
+            "Our AI instantly enriches every detail so you can present an outstanding role profile."
         )
         btn_job = "➕ Enter Job Title"
         btn_upload = "📂 Upload PDF / DOCX"
@@ -206,11 +212,15 @@ def start_discovery_page():
     prog = progress_percentage(st.session_state)
     st.progress(prog / 100.0, text=f"{prog}% complete")
     st.write(
-        "Gib einen Jobtitel ein und entweder eine URL zu einer bestehenden Stellenanzeige oder lade eine Stellenbeschreibung hoch. "
-        "Der Assistent analysiert die Inhalte und füllt relevante Felder automatisch aus."
+        (
+            "Geben Sie einen Jobtitel und optional eine URL oder Datei an. "
+            "Unsere KI analysiert alle Quellen und vervollständigt fehlende Informationen im Handumdrehen."
+        )
         if lang == "Deutsch"
-        else "Enter a job title and either a link to an existing job ad or upload a job description file. "
-        "The wizard will analyze the content and auto-fill relevant fields where possible."
+        else (
+            "Provide a job title and optionally a link or file. "
+            "Our AI reviews every source and instantly fills in any missing details."
+        )
     )
     col1, col2 = st.columns(2)
     with col1:
@@ -499,11 +509,16 @@ def render_step2_static():
 
 def render_step3_static():
     lang = st.session_state.get("lang", "English")
-    st.title(
-        "Schritt 3: Rollenbeschreibung"
-        if lang == "Deutsch"
-        else "Step 3: Role Definition"
-    )
+    company = st.session_state.get("company_name", "")
+    if lang == "Deutsch":
+        title = "Schritt 3: Rollenbeschreibung"
+        if company:
+            title += f" – {company}"
+    else:
+        title = "Step 3: Role Definition"
+        if company:
+            title += f" – {company}"
+    st.title(title)
     display_step_summary(3)
     role_description = st.text_area(
         "Rollenbeschreibung" if lang == "Deutsch" else "Role Description",
@@ -685,11 +700,16 @@ def render_step5_static():
 
 def render_step6_static():
     lang = st.session_state.get("lang", "English")
-    st.title(
-        "Schritt 6: Vergütung & Benefits"
-        if lang == "Deutsch"
-        else "Step 6: Compensation & Benefits"
-    )
+    job_title = st.session_state.get("job_title", "")
+    if lang == "Deutsch":
+        title = "Schritt 6: Vergütung & Benefits"
+        if job_title:
+            title += f" – {job_title}"
+    else:
+        title = "Step 6: Compensation & Benefits"
+        if job_title:
+            title += f" – {job_title}"
+    st.title(title)
     display_step_summary(6)
     salary_range = st.text_input(
         "Gehaltsrahmen" if lang == "Deutsch" else "Salary Range",
@@ -1061,6 +1081,7 @@ def render_step8():
 
 def run_wizard():
     """Haupt-Einstiegspunkt zum Rendern des Wizards basierend auf dem aktuellen Schritt."""
+    update_language()
     step = _clamp_step()
     _ensure_engine()
     if step == 1:
