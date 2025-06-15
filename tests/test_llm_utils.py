@@ -11,10 +11,10 @@ with patch.object(st_secrets.Secrets, "_parse", return_value={}):
 def test_suggest_additional_skills_parses_output() -> None:
     fake_content = "Technical Skills:\n- Python\n- SQL\nSoft Skills:\n- Leadership\n- Communication"
     fake_resp = Mock()
-    fake_resp.choices = [Mock(message=Mock(content=fake_content))]
+    fake_resp.output_text = fake_content
 
     with patch(
-        "utils.llm_utils.openai.chat.completions.create",
+        "utils.llm_utils.openai.responses.create",
         return_value=fake_resp,
     ):
         result = suggest_additional_skills("Engineer")

@@ -162,6 +162,11 @@ FUNCTION_DEFS: list[dict] = [
     },
 ]
 
+# Tools-Definition für die Responses API
+TOOL_DEFS: list[dict] = [
+    {"type": "function", "function": f, "strict": True} for f in FUNCTION_DEFS
+]
+
 # System-Rollen-Nachricht für den Assistant
 SYSTEM_MESSAGE = (
     "You are Vacalyser, an AI assistant for recruiters. "
@@ -315,10 +320,6 @@ def auto_fill_job_spec(
 
     # OpenAI API mit Function Calling oder optional Agents SDK
     content = ""
-    messages = [
-        {"role": "system", "content": SYSTEM_MESSAGE},
-        {"role": "user", "content": user_message},
-    ]
     if USE_AGENTS_SDK and Agent is not None:
         agent_tools = [
             _agent_scrape_company_site,
@@ -338,28 +339,30 @@ def auto_fill_job_spec(
         first_message = None
     else:
         try:
-            response = openai.chat.completions.create(  # type: ignore
+            response = openai.responses.create(  # type: ignore[misc]
                 model=config.OPENAI_MODEL,
-                messages=messages,
-                functions=FUNCTION_DEFS,
-                function_call="auto",
+                instructions=SYSTEM_MESSAGE,
+                input=user_message,
+                tools=cast(Any, TOOL_DEFS),
                 temperature=0.2,
-                max_tokens=1500,
+                max_output_tokens=1500,
             )
         except Exception as api_error:
             logger.error(f"OpenAI API Fehler in auto_fill_job_spec: {api_error}")
             return {}
-        first_message = response.choices[0].message
-    if (
-        first_message is not None
-        and hasattr(first_message, "function_call")
-        and first_message.function_call
-    ):
+        first_message = None
+        for item in response.output:
+            if getattr(item, "type", "") == "function_call":
+                first_message = cast(Any, item)
+                break
+        if first_message is None:
+            content = response.output_text or ""
+    if first_message is not None and getattr(first_message, "type", "") == "function_call":
         # Wenn das LLM eine Tool-Funktion aufruft, diese ausführen
-        func_name = first_message.function_call.name
+        func_name = first_message.name
         func_args = {}
         try:
-            func_args = json.loads(first_message.function_call.arguments or "{}")
+            func_args = json.loads(getattr(first_message, "arguments", "{}"))
         except Exception:
             pass
         func_result = ""
@@ -418,21 +421,25 @@ def auto_fill_job_spec(
                 func_result = json.dumps(vector_search_candidates(**func_args))
         except Exception as e:
             logger.error(f"Fehler bei Tool-Ausführung {func_name}: {e}")
-        # Ergebnis der Funktion als Assistant-Antwort hinzufügen und zweiten API-Call durchführen
-        messages.append({"role": "function", "name": func_name, "content": func_result})
+        # Ergebnis an Responses API übermitteln und zweiten Aufruf starten
         try:
-            second_response = openai.chat.completions.create(  # type: ignore
+            second_response = openai.responses.create(  # type: ignore[call-overload]
                 model=config.OPENAI_MODEL,
-                messages=messages,
-                functions=FUNCTION_DEFS,
-                function_call="auto",
+                previous_response_id=response.id,
+                instructions=SYSTEM_MESSAGE,
+                input={
+                    "type": "function_call_output",
+                    "call_id": first_message.call_id,
+                    "output": func_result,
+                },
+                tools=cast(Any, TOOL_DEFS),
                 temperature=0.2,
-                max_tokens=1500,
+                max_output_tokens=1500,
             )
         except Exception as api_error:
             logger.error(f"OpenAI API Fehler beim zweiten Aufruf: {api_error}")
             return {}
-        content = second_response.choices[0].message.content or ""
+        content = second_response.output_text or ""
     else:
         # Das LLM hat direkt geantwortet (keine Funktion benötigt)
         if first_message is not None:
@@ -459,20 +466,16 @@ def auto_fill_job_spec(
     except Exception as e:
         logger.error(f"Assistant lieferte kein gültiges JSON. Fehler: {e}")
         # Versuchen, das LLM sein Format korrigieren zu lassen
-        repair_system_msg = "Your previous output was not valid JSON. Only output a valid JSON matching JobSpec now."
         try:
-            repair_resp = openai.chat.completions.create(  # type: ignore
+            repair_resp = openai.responses.create(  # type: ignore[call-overload]
                 model=config.OPENAI_MODEL,
-                messages=[
-                    {"role": "system", "content": SYSTEM_MESSAGE},
-                    {"role": "user", "content": user_message},
-                    {"role": "assistant", "content": content_str},
-                    {"role": "system", "content": repair_system_msg},
-                ],
+                instructions=SYSTEM_MESSAGE,
+                input=content_str,
+                tools=cast(Any, TOOL_DEFS),
                 temperature=0,
-                max_tokens=1200,
+                max_output_tokens=1200,
             )
-            content_str = (repair_resp.choices[0].message.content or "").strip()
+            content_str = (repair_resp.output_text or "").strip()
             job_spec = JobSpec.model_validate_json(content_str)
         except Exception as e:
             logger.error(f"Reparaturversuch fehlgeschlagen: {e}")
@@ -500,13 +503,15 @@ def fix_json_output(raw_json: str) -> dict:
             "\n" + raw_json
         )
         try:
-            resp = openai.chat.completions.create(  # type: ignore
+            resp = openai.responses.create(  # type: ignore[call-overload]
                 model=config.OPENAI_MODEL,
-                messages=[{"role": "user", "content": repair_prompt}],
+                instructions="",
+                input=repair_prompt,
+                tools=cast(Any, TOOL_DEFS),
                 temperature=0,
-                max_tokens=1200,
+                max_output_tokens=1200,
             )
-            content = (resp.choices[0].message.content or "").strip()
+            content = (resp.output_text or "").strip()
             return JobSpec.model_validate_json(content).model_dump()
         except Exception as err:
             logger.error(f"JSON repair failed: {err}")

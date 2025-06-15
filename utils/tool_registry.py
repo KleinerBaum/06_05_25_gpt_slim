@@ -6,7 +6,7 @@ Originally from `src/utils/tool_registry.py`.
 Zentrale Sammlung aller @tool-dekorierten Funktionen.
 
 • @tool(...) registriert eine Funktion samt OpenAI-Schema
-• list_openai_functions() liefert die Schemaliste für ChatCompletion
+• list_openai_functions() liefert die Schemaliste für die Responses API
 """
 
 from __future__ import annotations

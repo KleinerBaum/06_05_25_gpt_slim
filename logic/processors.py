@@ -36,13 +36,14 @@ def update_task_list(state: dict[str, Any]) -> None:
     prompt += ".\n- "
     try:
         response = call_with_retry(
-            openai.chat.completions.create,
+            openai.responses.create,
             model=_SUGGESTION_MODEL,
-            messages=[{"role": "user", "content": prompt}],
+            instructions=None,
+            input=prompt,
             temperature=0.3,
-            max_tokens=100,
+            max_output_tokens=100,
         )
-        tasks_text = response.choices[0].message.content.strip()
+        tasks_text = response.output_text.strip()
     except Exception as e:
         logging.error(f"Task list suggestion failed: {e}")
         return
@@ -71,13 +72,14 @@ def update_must_have_skills(state: dict[str, Any]) -> None:
     prompt += "\n- "
     try:
         response = call_with_retry(
-            openai.chat.completions.create,  # type: ignore[attr-defined]
+            openai.responses.create,  # type: ignore[attr-defined]
             model=_SUGGESTION_MODEL,
-            messages=[{"role": "user", "content": prompt}],
+            instructions=None,
+            input=prompt,
             temperature=0.3,
-            max_tokens=100,
+            max_output_tokens=100,
         )
-        skills_text = response.choices[0].message.content.strip()
+        skills_text = response.output_text.strip()
     except Exception as e:
         logging.error(f"Must-have skills suggestion failed: {e}")
         return
@@ -106,13 +108,14 @@ def update_nice_to_have_skills(state: dict[str, Any]) -> None:
     prompt += "\n- "
     try:
         response = call_with_retry(
-            openai.chat.completions.create,  # type: ignore[attr-defined]
+            openai.responses.create,  # type: ignore[attr-defined]
             model=_SUGGESTION_MODEL,
-            messages=[{"role": "user", "content": prompt}],
+            instructions=None,
+            input=prompt,
             temperature=0.3,
-            max_tokens=60,
+            max_output_tokens=60,
         )
-        extra_skills = response.choices[0].message.content.strip()
+        extra_skills = response.output_text.strip()
     except Exception as e:
         logging.error(f"Nice-to-have skills suggestion failed: {e}")
         return
@@ -147,16 +150,14 @@ def update_salary_range(state: dict[str, Any]) -> None:
     )
     try:
         response = call_with_retry(
-            openai.chat.completions.create,  # type: ignore[attr-defined]
+            openai.responses.create,  # type: ignore[attr-defined]
             model=_SUGGESTION_MODEL,
-            messages=[
-                {"role": "system", "content": "You are a labour-market analyst."},
-                {"role": "user", "content": prompt},
-            ],
+            instructions="You are a labour-market analyst.",
+            input=prompt,
             temperature=0.2,
-            max_tokens=40,
+            max_output_tokens=40,
         )
-        result = response.choices[0].message.content.strip()
+        result = response.output_text.strip()
     except Exception as e:
         logging.error(f"Salary range estimation failed: {e}")
         return
