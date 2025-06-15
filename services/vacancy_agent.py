@@ -5,6 +5,9 @@ import logging
 import os
 from typing import Any, Dict, cast
 
+from logic.search_helpers import run_file_search
+from services.external_data import fetch_external_insight
+
 import openai  # type: ignore
 from utils import config
 
@@ -268,6 +271,27 @@ def auto_fill_job_spec(
             "A job ad file is provided. Please analyze its contents carefully.\n"
         )
     user_message += "Extract all relevant job information and return it in JSON format matching the JobSpec schema."
+
+    # Füge Kontext aus Datei- oder Websuche hinzu
+    search_context = ""
+    if file_bytes and file_name:
+        try:
+            results = run_file_search([file_name])
+            snippets = results.get("skill_extraction", [])
+            if snippets:
+                search_context = "\n".join(str(s) for s in snippets[:3])
+        except Exception as err:  # pragma: no cover - network errors
+            logger.error("File search failed: %s", err)
+    elif input_url:
+        try:
+            web_data = fetch_external_insight("branchentrends")
+            if web_data:
+                search_context = "\n".join(str(r) for r in web_data[:3])
+        except Exception as err:  # pragma: no cover - network errors
+            logger.error("Web search failed: %s", err)
+
+    if search_context:
+        user_message += f"\nAdditional context:\n{search_context}"
 
     # Falls der Dateitext sehr lang ist: vorab zusammenfassen, um Tokens zu sparen
     if file_bytes and file_name:

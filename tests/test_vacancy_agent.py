@@ -57,12 +57,17 @@ def test_auto_fill_uses_file_bytes() -> None:
         patch(
             "logic.file_tools.extract_text_from_file", return_value="job text"
         ) as extract_mock,
+        patch(
+            "services.vacancy_agent.run_file_search",
+            return_value={"skill_extraction": ["snippet"]},
+        ) as search_mock,
     ):
         from services.vacancy_agent import auto_fill_job_spec
 
         result = auto_fill_job_spec(file_bytes=b"abc", file_name="sample.txt")
 
     extract_mock.assert_called_once_with(b"abc", "sample.txt")
+    search_mock.assert_called_once_with(["sample.txt"])
     assert result["job_title"] == "Dev"
     assert create_mock.call_count == 2
 
@@ -77,3 +82,27 @@ def test_function_defs_contains_expected_names() -> None:
         "interview_prep_generator",
         "vector_search_candidates",
     }.issubset(names)
+
+
+def test_auto_fill_uses_web_search() -> None:
+    fake_resp = Mock()
+    fake_resp.choices = [
+        Mock(message=Mock(content='{"job_title": "Dev"}', function_call=None))
+    ]
+
+    with (
+        patch(
+            "services.vacancy_agent.openai.chat.completions.create",
+            return_value=fake_resp,
+        ) as create_mock,
+        patch(
+            "services.vacancy_agent.fetch_external_insight", return_value=["info"]
+        ) as fetch_mock,
+    ):
+        from services.vacancy_agent import auto_fill_job_spec
+
+        result = auto_fill_job_spec(input_url="http://example.com")
+
+    fetch_mock.assert_called_once_with("branchentrends")
+    assert result["job_title"] == "Dev"
+    create_mock.assert_called_once()
