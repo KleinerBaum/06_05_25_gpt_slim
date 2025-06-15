@@ -352,13 +352,12 @@ def start_discovery_page():
             match_and_store_keys(raw_text)
             return
         # Sprache der Quelle grob erkennen (Deutsch vs. Englisch)
-        sample = raw_text[:500].lower()
-        if sample.count(" der ") + sample.count(" die ") + sample.count(
-            " und "
-        ) > sample.count(" the "):
-            st.session_state["source_language"] = "Deutsch"
-        else:
-            st.session_state["source_language"] = "English"
+        from utils.lang_utils import detect_language
+
+        lang_code = detect_language(raw_text)
+        st.session_state["source_language"] = (
+            "Deutsch" if lang_code == "de" else "English"
+        )
         # Rohtext im Session State speichern & KI-Analyse durchführen
         st.session_state["parsed_data_raw"] = raw_text
         try:
