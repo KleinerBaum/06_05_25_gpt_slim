@@ -17,7 +17,12 @@ OpenAI's GPT models.
   scraping.
 - **FAISS based vector search** for storing and querying extracted text.
 - **Helper utilities** such as `build_boolean_query`,
-  `generate_interview_questions` and `summarize_job_ad`.
+  `generate_interview_questions`, `summarize_job_ad`,
+  `verify_job_level`, `seo_optimize`, `compare_benefits`,
+  `employment_type_advisor`, and `risk_flagging`.
+- **Compliance checker** that looks for equal-opportunity and data protection
+  clauses.
+- **Onboarding plan generator** returns a first-week checklist.
 - **File and web search helpers** plus image generation for maps and timelines.
 - **Job URL extraction** now uses readability-lxml to fetch the full text of
   job postings.

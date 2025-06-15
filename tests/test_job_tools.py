@@ -7,6 +7,14 @@ from logic.job_tools import (
     generate_interview_questions,
     summarize_job_ad,
     generate_task_plan,
+    verify_job_level,
+    seo_optimize,
+    check_compliance,
+    generate_onboarding_plan,
+    compare_benefits,
+    employment_type_advisor,
+    recruitment_checklist,
+    risk_flagging,
 )
 from utils.keys import STEP_KEYS
 
@@ -65,3 +73,57 @@ def test_generate_task_plan_splits_list() -> None:
     plan = generate_task_plan(tasks)
     assert set(plan.keys()) == {"day_30", "day_60", "day_90"}
     assert plan["day_30"]
+
+
+def test_verify_job_level() -> None:
+    resp = "Lead the team and manage strategy"
+    assert verify_job_level(resp, "senior")
+    assert not verify_job_level(resp, "junior")
+
+
+def test_seo_optimize() -> None:
+    text = "Python developer needed to build scalable data pipelines."
+    result = seo_optimize(text, max_keywords=3)
+    assert len(result["keywords"]) == 3
+    assert result["meta_description"].startswith("Python developer")
+
+
+def test_check_compliance() -> None:
+    text = (
+        "We are an equal opportunity employer and comply with GDPR data protection."
+        " Applicants from all backgrounds are welcome."
+    )
+    assert check_compliance(text)
+    assert not check_compliance("No clauses here")
+
+
+def test_generate_onboarding_plan() -> None:
+    plan = generate_onboarding_plan("Engineer")
+    assert len(plan) >= 4
+    assert any("Introduce" in step for step in plan)
+
+
+def test_compare_benefits() -> None:
+    offered = ["health insurance", "gym"]
+    benchmark = ["health insurance", "bonus"]
+    result = compare_benefits(offered, benchmark)
+    assert result["missing"] == ["bonus"]
+    assert result["extra"] == ["gym"]
+
+
+def test_employment_type_advisor() -> None:
+    text = "This is a 6 month contract position"
+    assert employment_type_advisor(text) == "contract"
+    assert employment_type_advisor("Freelance designer needed") == "freelance"
+
+
+def test_recruitment_checklist() -> None:
+    items = recruitment_checklist("Dev")
+    assert any("Finalize" in i for i in items)
+    assert len(items) >= 5
+
+
+def test_risk_flagging() -> None:
+    job = JobSpec()
+    issues = risk_flagging(job)
+    assert "Missing job title" in issues
