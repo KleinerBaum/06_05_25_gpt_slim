@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 import re
-from typing import List
+from typing import List, TypedDict
 
 from models.job_models import JobSpec
 
@@ -146,3 +146,177 @@ def generate_task_plan(task_list: str) -> dict[str, list[str]]:
         "day_60": tasks[chunk : 2 * chunk],
         "day_90": tasks[2 * chunk :],
     }
+
+
+class SEOResult(TypedDict):
+    """Return type for :func:`seo_optimize`."""
+
+    keywords: list[str]
+    meta_description: str
+
+
+def verify_job_level(responsibilities: str, job_level: str) -> bool:
+    """Check if given responsibilities match the advertised job level.
+
+    Args:
+        responsibilities: Bullet list or paragraph describing duties.
+        job_level: Level of the role (e.g. ``junior`` or ``senior``).
+
+    Returns:
+        ``True`` if responsibilities appear appropriate for the level.
+    """
+
+    if not responsibilities or not job_level:
+        return True
+
+    job_level = job_level.lower()
+    text = responsibilities.lower()
+
+    senior_terms = ["lead", "strategy", "manage", "mentor", "budget"]
+
+    if job_level.startswith("junior"):
+        return not any(term in text for term in senior_terms)
+
+    if job_level.startswith("senior") or job_level in {"lead", "director"}:
+        return any(term in text for term in senior_terms)
+
+    return True
+
+
+def seo_optimize(text: str, max_keywords: int = 5) -> SEOResult:
+    """Suggest simple SEO keywords and meta description for a job ad.
+
+    Args:
+        text: Full job advertisement text.
+        max_keywords: Number of keywords to return.
+
+    Returns:
+        Dictionary with ``keywords`` list and ``meta_description`` string.
+    """
+
+    if not text:
+        return {"keywords": [], "meta_description": ""}
+
+    words = re.findall(r"[A-Za-z]{5,}", text.lower())
+    freq: dict[str, int] = {}
+    for w in words:
+        freq[w] = freq.get(w, 0) + 1
+    top_words = sorted(freq, key=lambda w: freq[w], reverse=True)
+    keywords = top_words[:max_keywords]
+
+    first_sentence = re.split(r"[.!?]", text.strip())[0]
+    meta_desc = (
+        first_sentence[:157] + "..." if len(first_sentence) > 160 else first_sentence
+    )
+
+    return {"keywords": keywords, "meta_description": meta_desc}
+
+
+def check_compliance(text: str) -> bool:
+    """Return ``True`` if common legal disclaimers are present.
+
+    The function looks for equal opportunity and data protection clauses.
+
+    Args:
+        text: Job advertisement text to inspect.
+
+    Returns:
+        ``True`` when all clauses appear in ``text``.
+    """
+
+    if not text:
+        return False
+    lower = text.lower()
+    has_equal = "equal opportunity" in lower or "m/f/d" in lower
+    has_privacy = "data protection" in lower or "gdpr" in lower
+    return has_equal and has_privacy
+
+
+def generate_onboarding_plan(role: str) -> list[str]:
+    """Create a basic onboarding checklist for the given role.
+
+    Args:
+        role: Title of the position.
+
+    Returns:
+        List of onboarding tasks for the first week.
+    """
+
+    if not role:
+        role = "the new hire"
+    return [
+        f"Introduce {role} to the team",
+        "Set up accounts and access",
+        "Explain key processes and tools",
+        "Assign a small starter project",
+    ]
+
+
+def compare_benefits(
+    offered: list[str], benchmark: list[str] | None = None
+) -> dict[str, list[str]]:
+    """Compare offered benefits with an optional benchmark list.
+
+    Args:
+        offered: Benefits included in the job ad.
+        benchmark: Typical industry benefits to compare against.
+
+    Returns:
+        Dictionary with ``missing`` and ``extra`` benefit lists.
+    """
+
+    offered_set = {b.lower() for b in offered if b}
+    benchmark_set = {b.lower() for b in benchmark or []}
+
+    missing = sorted(benchmark_set - offered_set)
+    extra = sorted(offered_set - benchmark_set) if benchmark else []
+
+    return {"missing": missing, "extra": extra}
+
+
+def employment_type_advisor(text: str) -> str:
+    """Suggest whether a role is permanent, contract or freelance.
+
+    Args:
+        text: Job description or specification.
+
+    Returns:
+        Recommended employment type string.
+    """
+
+    if not text:
+        return "permanent"
+
+    lower = text.lower()
+    if any(term in lower for term in ["contract", "project-based", "temporary"]):
+        return "contract"
+    if "freelance" in lower:
+        return "freelance"
+    return "permanent"
+
+
+def recruitment_checklist(role: str) -> list[str]:
+    """Return a simple checklist of recruitment steps for the role."""
+
+    if not role:
+        role = "the position"
+    return [
+        f"Finalize description for {role}",
+        "Publish job ad on chosen platforms",
+        "Screen incoming applications",
+        "Schedule interviews",
+        "Prepare offer letter",
+    ]
+
+
+def risk_flagging(job: JobSpec) -> list[str]:
+    """Highlight missing or inconsistent fields in a ``JobSpec``."""
+
+    issues: list[str] = []
+    if not job.job_title:
+        issues.append("Missing job title")
+    if not job.company_name:
+        issues.append("Missing company name")
+    if not job.salary_range:
+        issues.append("Salary range not specified")
+    return issues
