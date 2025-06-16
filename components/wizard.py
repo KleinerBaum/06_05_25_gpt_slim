@@ -58,6 +58,18 @@ def _clamp_step() -> int:
     return st.session_state["wizard_step"]
 
 
+def next_step() -> None:
+    """Increment the current wizard step while staying within bounds."""
+    st.session_state["wizard_step"] = _clamp_step() + 1
+    _clamp_step()
+
+
+def previous_step() -> None:
+    """Decrement the current wizard step while staying within bounds."""
+    st.session_state["wizard_step"] = _clamp_step() - 1
+    _clamp_step()
+
+
 def _int_from_state(key: str, default: int) -> int:
     """Safely parse an int from session state or return the default."""
     val = st.session_state.get(key)
@@ -1260,7 +1272,7 @@ def _nav(step: int) -> None:
     if step < 8:
         st.button(
             "Weiter" if lang == "Deutsch" else "Next",
-            on_click=lambda: st.session_state.update({"wizard_step": step + 1}),
+            on_click=next_step,
             key=f"next_{step}",
         )
     if step > 1:
@@ -1271,6 +1283,6 @@ def _nav(step: int) -> None:
         )
         st.button(
             "Zurück" if lang == "Deutsch" else "Back",
-            on_click=lambda: st.session_state.update({"wizard_step": step - 1}),
+            on_click=previous_step,
             key=f"back_{step}",
         )
