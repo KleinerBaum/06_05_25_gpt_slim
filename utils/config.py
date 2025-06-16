@@ -30,8 +30,12 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip("\"' ")
 SALARY_ESTIMATION_MODEL = os.getenv("SALARY_ESTIMATION_MODEL", "gpt-4o-mini")
 
 # Übernahme aus Streamlit Secrets (falls vorhanden)
-if "openai" in st.secrets:
-    secrets_data = st.secrets["openai"]
+try:
+    secrets_data = st.secrets.get("openai")
+except st.errors.StreamlitSecretNotFoundError:
+    secrets_data = None
+
+if secrets_data:
     # API-Key
     if secrets_data.get("OPENAI_API_KEY"):
         OPENAI_API_KEY = secrets_data["OPENAI_API_KEY"]
