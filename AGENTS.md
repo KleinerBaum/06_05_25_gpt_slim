@@ -38,6 +38,7 @@ DEFAULT_MODEL	gpt-4o	Fallback model if none is provided
 VECTOR_STORE_PATH	./vector_store	Path to FAISS directory
 OPENAI_MODEL	gpt-4o-mini	Main chat model for extraction / enrichment
 SALARY_ESTIMATION_MODEL	gpt-4o-mini	Fast model for salary benchmarks
+USE_ASSISTANTS_API	0/1 Use OpenAI Assistants + built-in tools
 
 Tip: Load from .env locally, but rely on Streamlit secrets.toml in prod:
 
@@ -148,3 +149,11 @@ Remember to mock the OpenAI module (unittest.mock.patch("openai.ChatCompletion.c
  pre-commit run --all-files passes
 
  Updated this file if behaviour or env-vars changed
+
+11\xa0\xb7\xa0Assistants & Responses API
+When `USE_ASSISTANTS_API=1`, `services/vacancy_agent.py` interacts with
+OpenAI's Assistants endpoints instead of plain chat completions. A temporary
+assistant is created with the built-in `retrieval` and `code_interpreter` tools.
+The run is polled via the Responses API until completed, then the final message
+content is returned. This allows richer file handling and code execution without
+shipping custom tools.

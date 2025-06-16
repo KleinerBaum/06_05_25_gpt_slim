@@ -171,6 +171,8 @@ SYSTEM_MESSAGE = (
 
 # Optional: Agent-based execution using the OpenAI Agents SDK
 USE_AGENTS_SDK = os.getenv("USE_AGENTS_SDK", "0") == "1"
+# Use the Assistants/Responses API with built-in tools if enabled
+USE_ASSISTANTS_API = os.getenv("USE_ASSISTANTS_API", "0") == "1"
 
 if Agent is not None:
 
@@ -233,6 +235,42 @@ if Agent is not None:
         from services.new_tools import vector_search_candidates
 
         return vector_search_candidates(query, top_k, vector_store_id)
+
+
+async def _assistants_completion(user_message: str) -> str:
+    """Run a prompt via the Assistants API with built-in tools.
+
+    Args:
+        user_message: Chat message from the caller.
+
+    Returns:
+        Assistant response text, or an empty string on failure.
+    """
+    try:
+        assistant = openai.beta.assistants.create(  # type: ignore[arg-type]
+            name="Vacalyser",
+            model=config.OPENAI_MODEL,
+            instructions=SYSTEM_MESSAGE,
+            tools=[{"type": "retrieval"}, {"type": "code_interpreter"}],  # type: ignore[arg-type,list-item,misc]
+        )
+        thread = openai.beta.threads.create()
+        openai.beta.threads.messages.create(
+            thread.id, role="user", content=user_message
+        )
+        run = openai.beta.threads.runs.create(thread.id, assistant_id=assistant.id)
+        while run.status not in {"completed", "failed", "cancelled"}:
+            await asyncio.sleep(0.5)
+            run = openai.beta.threads.runs.retrieve(
+                thread_id=thread.id, run_id=run.id
+            )  # type: ignore[call-arg]
+        if run.status != "completed":
+            logger.error("Assistants run failed: %s", run.status)
+            return ""
+        messages = openai.beta.threads.messages.list(thread_id=thread.id)
+        return messages.data[-1].content[0].text.value  # type: ignore[attr-defined,union-attr]
+    except Exception as api_error:  # pragma: no cover - network errors
+        logger.error(f"Assistants API error: {api_error}")
+        return ""
 
 
 def auto_fill_job_spec(
@@ -335,6 +373,9 @@ def auto_fill_job_spec(
         except Exception as api_error:  # pragma: no cover - network errors
             logger.error(f"Agents SDK Fehler in auto_fill_job_spec: {api_error}")
             return {}
+        first_message = None
+    elif USE_ASSISTANTS_API:
+        content = asyncio.run(_assistants_completion(user_message))
         first_message = None
     else:
         try:
