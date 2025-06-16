@@ -42,29 +42,19 @@ def get_role_skills(job_title: str, num_skills: int = 15) -> List[str]:
             "Provide the list as bullet points or a comma-separated list, without any additional commentary."
         )
     # OpenAI API nutzen
-    messages = [
-        {"role": "system", "content": assistant_prompt},
-        {
-            "role": "user",
-            "content": f"List {num_skills} must-have skills for a '{job_title}' position.",
-        },
-    ]
     try:
         completion = call_with_retry(
-            openai.chat.completions.create,  # type: ignore[attr-defined]
+            openai.responses.create,  # type: ignore[attr-defined]
             model=config.OPENAI_MODEL,
-            messages=messages,
+            instructions=assistant_prompt,
+            input=f"List {num_skills} must-have skills for a '{job_title}' position.",
             temperature=0.5,
-            max_tokens=200,
+            max_output_tokens=200,
         )
     except Exception as e:
         logger.error(f"OpenAI API Fehler bei get_role_skills: {e}")
         return skills_list
-    raw_output = (
-        completion.choices[0].message.content
-        if completion and completion.choices
-        else ""
-    )
+    raw_output = completion.output_text if completion else ""
     raw_output = (raw_output or "").strip()
     # Ergebnis-String in Skills-Liste umwandeln
     if not raw_output:
@@ -129,13 +119,14 @@ def suggest_additional_skills(
 
     try:
         resp = call_with_retry(
-            openai.chat.completions.create,  # type: ignore[attr-defined]
+            openai.responses.create,  # type: ignore[attr-defined]
             model=config.OPENAI_MODEL,
-            messages=[{"role": "user", "content": prompt}],
+            instructions=None,
+            input=prompt,
             temperature=0.4,
-            max_tokens=200,
+            max_output_tokens=200,
         )
-        content = resp.choices[0].message.content or ""
+        content = resp.output_text or ""
     except Exception as e:  # pragma: no cover - network errors
         logger.error(f"OpenAI API Fehler bei suggest_additional_skills: {e}")
         return {"technical": [], "soft": []}

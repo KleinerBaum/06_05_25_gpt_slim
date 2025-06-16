@@ -137,7 +137,7 @@ Streamlit smoke test – streamlit run app.py --server.headless true in GitHub A
 
 Lint / Type-check – flake8 + black --check + mypy .
 
-Remember to mock the OpenAI module (unittest.mock.patch("openai.ChatCompletion.create", …)).
+Remember to mock the OpenAI module (unittest.mock.patch("openai.responses.create", …)).
 
 10 · Contributing checklist
  New tool decorated with @tool, documented here

@@ -24,10 +24,10 @@ def test_fix_json_output_repairs_malformed_json() -> None:
     fixed_spec = JobSpec(job_title="Engineer", company_name="ACME")
     completion = fixed_spec.model_dump_json()
     fake_resp = Mock()
-    fake_resp.choices = [Mock(message=Mock(content=completion))]
+    fake_resp.output_text = completion
 
     with patch(
-        "services.vacancy_agent.openai.chat.completions.create",
+        "services.vacancy_agent.openai.responses.create",
         return_value=fake_resp,
     ) as create_mock:
         result = fix_json_output(malformed)
@@ -40,10 +40,10 @@ def test_auto_fill_uses_file_bytes() -> None:
     call_obj = Mock()
     call_obj.name = "extract_text_from_file"
     call_obj.arguments = "{}"
-    fake_first = Mock()
-    fake_first.choices = [Mock(message=Mock(function_call=call_obj))]
-    fake_second = Mock()
-    fake_second.choices = [Mock(message=Mock(content='{"job_title": "Dev"}'))]
+    call_obj.call_id = "1"
+    call_obj.type = "function_call"
+    fake_first = Mock(id="r1", output=[call_obj], output_text="")
+    fake_second = Mock(id="r2", output=[], output_text='{"job_title": "Dev"}')
     responses = [fake_first, fake_second]
 
     def fake_create(*_args, **_kwargs):
@@ -51,7 +51,7 @@ def test_auto_fill_uses_file_bytes() -> None:
 
     with (
         patch(
-            "services.vacancy_agent.openai.chat.completions.create",
+            "services.vacancy_agent.openai.responses.create",
             side_effect=fake_create,
         ) as create_mock,
         patch(
@@ -85,14 +85,11 @@ def test_function_defs_contains_expected_names() -> None:
 
 
 def test_auto_fill_uses_web_search() -> None:
-    fake_resp = Mock()
-    fake_resp.choices = [
-        Mock(message=Mock(content='{"job_title": "Dev"}', function_call=None))
-    ]
+    fake_resp = Mock(output=[], output_text='{"job_title": "Dev"}')
 
     with (
         patch(
-            "services.vacancy_agent.openai.chat.completions.create",
+            "services.vacancy_agent.openai.responses.create",
             return_value=fake_resp,
         ) as create_mock,
         patch(

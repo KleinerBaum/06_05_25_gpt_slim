@@ -22,13 +22,14 @@ def summarize_text(text: str, quality: str = "standard") -> str:
     )
     try:
         response = call_with_retry(
-            openai.chat.completions.create,  # type: ignore[attr-defined]
+            openai.responses.create,  # type: ignore[attr-defined]
             model=config.OPENAI_MODEL,
-            messages=[{"role": "user", "content": prompt}],
+            instructions=None,
+            input=prompt,
             temperature=temperature,
-            max_tokens=300,
+            max_output_tokens=300,
         )
-        return response.choices[0].message.content.strip()
+        return response.output_text.strip()
     except Exception as err:
         logger.error("summarize_text failed: %s", err)
         return ""

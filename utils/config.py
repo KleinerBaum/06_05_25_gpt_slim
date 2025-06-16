@@ -21,7 +21,7 @@ LANGUAGE = os.getenv("LANGUAGE", "en")
 DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "gpt-4o")
 VECTOR_STORE_PATH = os.getenv("VECTOR_STORE_PATH", "./vector_store")
 
-# OpenAI Modell für ChatCompletion (mit Function Calling)
+# OpenAI Modell für die Responses API (mit integrierten Tools)
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", DEFAULT_MODEL)
 # OpenAI API Key aus .env oder Streamlit Secrets
 # Surrounding quotes in `.env` will be trimmed automatically
