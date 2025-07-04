@@ -1,6 +1,6 @@
 import base64
 import streamlit as st
-
+from openai import tool
 from components import wizard
 
 # Set up page configuration (title, icon, layout, etc.)
