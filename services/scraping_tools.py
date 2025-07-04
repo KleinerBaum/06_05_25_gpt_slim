@@ -1,4 +1,4 @@
-# Optional decorator (works even without tool_registry)
+from openai import tool# Optional decorator (works even without tool_registry)
 try:
     from utils.tool_registry import tool
 except (ImportError, ModuleNotFoundError):  # Fallback decorator
